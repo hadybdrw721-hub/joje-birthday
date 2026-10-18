@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Happy Birthday ✨</title>
+<!-- Fonts: Playfair Display (headlines) + Poppins (UI) -->
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,800;1,500&family=Poppins:wght@300;400;500;600&family=Dancing+Script:wght@600;700&family=Great+Vibes&family=Pacifico&family=Cinzel:wght@600;800&display=swap" rel="stylesheet">
+<!-- Tailwind (play CDN) + canvas-confetti -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+<style>
+  :root{--violet:#7c6cf0;--rose:#f7a8d0;--ink:#120c26}
+  html{scroll-behavior:smooth}
+  body{font-family:'Poppins',sans-serif;color:#f5ecff;background:var(--ink);overflow-x:hidden}
+  .font-display{font-family:'Playfair Display',serif}
+  /* Aurora background */
+  .aurora{position:fixed;inset:0;z-index:-1;background:
+    radial-gradient(60% 50% at 15% 10%,rgba(124,108,240,.45),transparent 70%),
+    radial-gradient(50% 45% at 90% 25%,rgba(247,168,208,.35),transparent 70%),
+    radial-gradient(60% 50% at 50% 100%,rgba(167,139,250,.35),transparent 70%),var(--ink)}
+  .glass{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:0 20px 60px rgba(10,5,30,.5)}
+  .grad-text{background:linear-gradient(90deg,#c4b5fd,#f9a8d4,#e9d5ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .btn{background:linear-gradient(135deg,#8b7cf6,#f472b6);box-shadow:0 10px 30px rgba(244,114,182,.35);transition:transform .25s,box-shadow .25s}
+  .btn:hover{transform:translateY(-3px) scale(1.03);box-shadow:0 16px 40px rgba(244,114,182,.55)}
+  .btn-ghost{border:1px solid rgba(255,255,255,.3);transition:background .25s}
+  .btn-ghost:hover{background:rgba(255,255,255,.12)}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+  @keyframes glow{0%,100%{box-shadow:0 0 30px rgba(167,139,250,.35)}50%{box-shadow:0 0 70px rgba(249,168,212,.6)}}
+  .float{animation:float 5s ease-in-out infinite}.glow{animation:glow 4s ease-in-out infinite}
+  /* Scroll reveal */
+  .reveal{opacity:0;transform:translateY(28px);transition:opacity .9s,transform .9s}
+  .reveal.show{opacity:1;transform:none}
+  /* Candle flame */
+  /* Realistic flame: anchored to the wick (fill-box origin), organic sway, soft halo */
+  .flame{transform-box:fill-box;transform-origin:50% 100%;transform:rotate(calc(var(--blow,0)*28deg));transition:opacity .45s,transform .25s}
+  .fl{transform-box:fill-box;transform-origin:50% 100%;animation:sway 2.1s ease-in-out infinite}
+  @keyframes sway{0%,100%{transform:rotate(-1.4deg) scale(1,1)}20%{transform:rotate(1.8deg) scale(.96,1.06)}45%{transform:rotate(-.6deg) scale(1.03,.95)}70%{transform:rotate(1.2deg) scale(.98,1.07)}}
+  .halo{animation:haloP 1.7s ease-in-out infinite;transition:opacity .45s}
+  @keyframes haloP{0%,100%{opacity:.7}50%{opacity:1}}
+  .candle.out .flame{opacity:0;transform:scale(.2)}
+  .candle.out .fl{animation:none}
+  .candle.out .halo{animation:none;opacity:0}
+  /* Hero title animations */
+  .w{display:inline-block;white-space:nowrap}.ch{display:inline-block}
+  .a-shimmer{animation:shim 2.8s ease-in-out infinite}@keyframes shim{0%,100%{filter:brightness(1)}50%{filter:brightness(1.55)}}
+  .emo{display:inline-block}
+  .e-beat{animation:beat 1.3s ease-in-out infinite}@keyframes beat{0%,100%{transform:scale(1)}15%{transform:scale(1.25)}30%{transform:scale(1)}45%{transform:scale(1.18)}}
+  /* Video frame: fixed 9:16 box, video fills it (letterboxed), fallback shows if the file is missing */
+  .vframe{position:relative;aspect-ratio:9/16;overflow:hidden;border-radius:1rem;background:rgba(0,0,0,.4)}
+  .vframe video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+  .vfb{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:.35rem;padding:1rem;text-align:center;font-size:.75rem;color:#e9d5ff;pointer-events:none}
+  .vframe.missing .vfb{display:flex}.vframe.missing video{visibility:hidden}
+  /* Photo cards */
+  .pcard{transition:transform .5s,box-shadow .5s}
+  .pcard:hover{transform:translateY(-6px);box-shadow:0 0 45px rgba(244,114,182,.45),0 20px 60px rgba(10,5,30,.5)}
+  .pframe{position:relative;aspect-ratio:4/5;overflow:hidden;border-radius:1rem;background:linear-gradient(145deg,rgba(139,124,246,.25),rgba(244,114,182,.2))}
+  .pframe img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .8s}
+  .pcard:hover .pframe img{transform:scale(1.06)}
+  .pfb{position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-size:2.5rem}
+  .pframe.missing .pfb{display:flex}.pframe.missing img{display:none}
+  /* "For You" / "October’s Beauty" section titles: romantic script with a slow glow */
+  .script-title{font-family:'Great Vibes',cursive;font-size:clamp(3.5rem,14vw,6rem);line-height:1.1;color:#fbcfe8;animation:youGlow 3.2s ease-in-out infinite}
+  @keyframes youGlow{0%,100%{text-shadow:0 0 12px rgba(244,114,182,.45),0 0 28px rgba(167,139,250,.3)}50%{text-shadow:0 0 22px rgba(249,168,212,.9),0 0 54px rgba(167,139,250,.6)}}
+  .candle .smoke{opacity:0}
+  .candle.out .smoke{animation:smoke 1.6s ease-out forwards}
+  @keyframes smoke{0%{opacity:.7;transform:translateY(0)}100%{opacity:0;transform:translateY(-36px)}}
+  .candle{cursor:pointer}
+  /* 3D flip cards */
+  .flip{perspective:1000px;height:260px}
+  .flip-in{position:relative;width:100%;height:100%;transition:transform .8s cubic-bezier(.2,.8,.2,1);transform-style:preserve-3d}
+  .flip.on .flip-in{transform:rotateY(180deg)}
+  @media(hover:hover){.flip:hover .flip-in{transform:rotateY(180deg)}}
+  .face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:1.5rem;padding:1.5rem;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+  .back{transform:rotateY(180deg);background:linear-gradient(145deg,rgba(139,124,246,.4),rgba(244,114,182,.35));border:1px solid rgba(255,255,255,.25)}
+  /* Video cards */
+  
+  /* Music visualiser */
+  .bars span{display:block;width:3px;border-radius:2px;background:#fff;height:6px}
+  .playing .bars span{animation:bar 1s ease-in-out infinite}
+  .playing .bars span:nth-child(2){animation-delay:.15s}.playing .bars span:nth-child(3){animation-delay:.3s}
+  .playing .bars span:nth-child(4){animation-delay:.45s}.playing .bars span:nth-child(5){animation-delay:.6s}
+  @keyframes bar{0%,100%{height:5px}50%{height:22px}}
+  .playing#musicBtn{animation:glow 2s ease-in-out infinite}
+  /* Floating SVG rose petals: only transform + opacity are animated (smooth on phones) */
+  #petals{position:fixed;inset:0;z-index:30;pointer-events:none;overflow:hidden}
+  .petal{position:absolute;top:0;left:0;will-change:transform,opacity;animation:petalFall linear infinite}
+  .petal>i{display:block;background-size:contain;background-repeat:no-repeat;will-change:transform;animation:petalSway ease-in-out infinite alternate}
+  @keyframes petalFall{0%{transform:translate3d(0,-12vh,0);opacity:0}8%{opacity:1}88%{opacity:1}100%{transform:translate3d(0,110vh,0);opacity:0}}
+  @keyframes petalSway{from{transform:translate3d(calc(var(--sw)*-1),0,0) perspective(300px) rotateZ(calc(var(--rot)*-1)) rotateY(-55deg)}to{transform:translate3d(var(--sw),0,0) perspective(300px) rotateZ(var(--rot)) rotateY(55deg)}}
+  #petals.paused .petal,#petals.paused .petal>i{animation-play-state:paused}
+  /* Hide any native video UI (play overlay / controls) */
+  .vframe video::-webkit-media-controls,.vframe video::-webkit-media-controls-start-playback-button{display:none!important}
+  /* Secret envelope (CSS-drawn) */
+  .env{position:relative;display:block;width:min(86vw,300px);height:200px;margin:0 auto;border-radius:1rem;overflow:hidden;perspective:800px;cursor:pointer;filter:drop-shadow(0 20px 40px rgba(10,5,30,.5));transition:transform .4s}
+  .env:hover,.env:focus-visible{transform:translateY(-6px) scale(1.02)}
+  .env-back{position:absolute;inset:0;background:linear-gradient(145deg,#8b7cf6,#c084fc)}
+  .env-front{position:absolute;inset:0;background:linear-gradient(145deg,#f9a8d4,#f472b6);clip-path:polygon(0 100%,0 0,50% 58%,100% 0,100% 100%)}
+  .env-flap{position:absolute;inset:0;background:linear-gradient(180deg,#fbcfe8,#f9a8d4);clip-path:polygon(0 0,100% 0,50% 58%);transform-origin:50% 0;transition:transform .5s}
+  .env:hover .env-flap,.env:focus-visible .env-flap{transform:rotateX(35deg)}
+  .env-seal{position:absolute;left:50%;top:58%;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;background:radial-gradient(circle at 35% 30%,#fff,#fde2f3 62%,#f9a8d4);box-shadow:0 4px 14px rgba(10,5,30,.35),inset 0 0 0 2px rgba(255,255,255,.6)}
+  .env-seal img{display:block;width:24px;height:24px}
+  /* Letter modal */
+  .letter-modal{display:none}.letter-modal.open{display:flex}
+  .letter{background:linear-gradient(160deg,rgba(60,40,120,.93),rgba(110,40,100,.9));border:1px solid rgba(255,255,255,.2);box-shadow:0 30px 90px rgba(0,0,0,.6),0 0 60px rgba(244,114,182,.25);animation:letterIn .5s cubic-bezier(.2,.8,.2,1)}
+  @keyframes letterIn{from{opacity:0;transform:translateY(24px) scale(.96)}to{opacity:1;transform:none}}
+  .letter-title{font-family:'Great Vibes',cursive;font-size:clamp(2.4rem,9vw,3.4rem);line-height:1.2;color:#fbcfe8;text-shadow:0 0 22px rgba(249,168,212,.55);margin-bottom:1rem}
+  .letter-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji",sans-serif;font-size:1.1rem;line-height:2.05;text-align:right;color:#f5ecff;-webkit-font-smoothing:antialiased;font-synthesis:none;font-variant-emoji:emoji}
+  /* Twemoji (vector color emoji images) aligned with the Arabic text */
+  .letter-body img.twemoji{height:1.2em;width:1.2em;vertical-align:-0.2em;display:inline-block;margin:0 2px}
+  .letter-body p+p{margin-top:1.1rem}
+  .letter-sign{font-family:'Great Vibes',cursive;font-size:2rem;color:#f9a8d4;text-align:left;margin-top:1.5rem}
+  /* Tap-to-open overlay */
+  #openOverlay{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;padding:1.5rem;text-align:center;cursor:pointer;
+    background:radial-gradient(60% 50% at 20% 15%,rgba(124,108,240,.5),transparent 70%),radial-gradient(55% 45% at 85% 85%,rgba(247,168,208,.4),transparent 70%),#120c26;
+    transition:opacity .8s ease,visibility .8s ease;-webkit-tap-highlight-color:transparent}
+  #openOverlay.hide{opacity:0;visibility:hidden;pointer-events:none}
+  .open-title{font-family:'Playfair Display',serif;font-weight:800;font-size:clamp(1.8rem,7vw,3rem);line-height:1.25;max-width:20ch;color:#fbcfe8;text-shadow:0 0 28px rgba(249,168,212,.5);animation:pulse 2.4s ease-in-out infinite}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+  .open-sub{font-family:'Dancing Script',cursive;font-size:clamp(1.3rem,5vw,1.9rem);color:#f5d0fe;max-width:26ch}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<!-- Tap-to-open overlay: the tap is the user gesture that lets the music start on phones -->
+<div id="openOverlay" role="button" tabindex="0" aria-label="Tap anywhere to open your surprise">
+  <h1 class="open-title">Tap anywhere to open your surprise 🎁</h1>
+  <p class="open-sub">I don't rate you 10/10... I rate you 21/10 ❤️ 😝</p>
+</div>
+<div class="aurora"></div>
+<!-- Ambient falling petals (generated by script below) -->
+<div id="petals" aria-hidden="true"></div>
+
+<!-- ============ 1. HERO ============ -->
+<section id="hero" class="min-h-screen flex items-center justify-center px-5 py-16">
+  <div id="heroCard" class="glass glow float rounded-[2rem] max-w-2xl w-full p-8 sm:p-12 text-center">
+    <h1 id="heroTitle" class="leading-tight" style="font-family:'Dancing Script',cursive;font-size:clamp(2.9rem,12vw,5.2rem);font-weight:700;text-shadow:0 0 28px #f9a8d488"><span id="heroWords">Happy Birthday</span> <span class="emo e-beat">🥰</span></h1>
+    <p id="heroLine2" class="mt-3" style="font-family:'Dancing Script',cursive;font-size:calc(clamp(1.3rem,5vw,2rem)*1.1);color:#f5d0fe">to my favorite person, Joje.</p>
+    <p id="heroSub" class="mt-5 text-violet-100/80 font-light">Another trip around the sun, and the world is brighter with you in it. Ready for your surprises?</p>
+    <button id="startBtn" class="btn mt-8 rounded-full px-8 py-3.5 font-medium text-white">Start celebration</button>
+  </div>
+</section>
+
+<!-- ============ 2. CAKE ============ -->
+<section id="cake" class="min-h-screen flex items-center justify-center px-5 py-16">
+  <div class="reveal glass rounded-[2rem] max-w-xl w-full p-8 text-center">
+    <h2 class="font-display text-3xl sm:text-4xl font-semibold grad-text">Make a wish</h2>
+    <p id="cakeMsg" class="text-violet-100/75 mt-2 mb-4 text-sm">Tap each candle, press the button, or blow into your microphone.</p>
+
+    <svg viewBox="0 0 300 260" class="mx-auto w-full max-w-xs" aria-label="Birthday cake with candles">
+      <defs>
+        <linearGradient id="gPink" x1="0" x2="1"><stop offset="0" stop-color="#f9a8d4"/><stop offset="1" stop-color="#fbcfe8"/></linearGradient>
+        <linearGradient id="gViolet" x1="0" x2="1"><stop offset="0" stop-color="#8b7cf6"/><stop offset="1" stop-color="#c4b5fd"/></linearGradient>
+        <radialGradient id="gFlame" cx=".5" cy=".7"><stop offset="0" stop-color="#fff7c2"/><stop offset=".6" stop-color="#fbbf24"/><stop offset="1" stop-color="#f472b6"/></radialGradient>
+      </defs>
+      <ellipse cx="150" cy="238" rx="130" ry="14" fill="#000" opacity=".25"/>
+      <rect x="30" y="160" width="240" height="70" rx="14" fill="url(#gViolet)"/>
+      <rect x="55" y="105" width="190" height="60" rx="14" fill="url(#gPink)"/>
+      <!-- icing drips -->
+      <path d="M55 120 q10 22 20 0 q10 26 20 0 q10 20 20 0 q10 26 20 0 q10 20 20 0 q10 26 20 0 q10 20 20 0 L245 105 H55Z" fill="#fff" opacity=".9"/>
+      <path d="M30 175 q12 24 24 0 q12 28 24 0 q12 22 24 0 q12 28 24 0 q12 22 24 0 q12 28 24 0 q12 22 24 0 q12 28 24 0 q12 22 24 0 L270 160 H30Z" fill="#fff" opacity=".9"/>
+      <g fill="#fbcfe8"><circle cx="90" cy="205" r="5"/><circle cx="150" cy="212" r="5"/><circle cx="210" cy="205" r="5"/></g>
+      <!-- candles -->
+      <g id="candles"></g>
+    </svg>
+
+    <div class="flex flex-wrap gap-3 justify-center mt-4">
+      <button id="blowBtn" class="btn rounded-full px-6 py-3 text-sm font-medium text-white">Blow out candles</button>
+      <button id="micBtn" class="btn-ghost rounded-full px-6 py-3 text-sm font-medium">🎤 Use microphone</button>
+      <button id="relightBtn" class="btn-ghost rounded-full px-6 py-3 text-sm font-medium hidden">Light again</button>
+    </div>
+    <div id="micMeter" class="mt-4 h-1.5 w-full max-w-xs mx-auto rounded-full bg-white/10 overflow-hidden hidden"><div id="micFill" class="h-full w-0 bg-gradient-to-r from-violet-400 to-pink-300"></div></div>
+    <!-- Microphone prompts / errors appear here -->
+    <div id="micBanner" role="alert" class="hidden mt-4 mx-auto max-w-xs rounded-2xl px-4 py-3 text-sm text-white bg-gradient-to-r from-violet-500/50 to-pink-500/50 border border-white/30 shadow-[0_0_30px_rgba(244,114,182,.4)] animate-pulse">🎤 Click 'Allow' when your browser requests microphone access.</div>
+    <p id="micStatus" role="status" class="mt-3 text-xs text-pink-200/90 min-h-[1rem]"></p>
+  </div>
+</section>
+
+<!-- ============ 3. FOR YOU (video gallery) ============ -->
+<section id="videos" class="px-5 py-20 max-w-5xl mx-auto">
+  <div class="reveal text-center mb-10">
+    <h2 class="script-title">For You</h2>
+    <div class="mx-auto mt-3 h-px w-24 bg-gradient-to-r from-transparent via-pink-300/70 to-transparent"></div>
+  </div>
+
+  <!-- Put your MP4 files in a folder called "videos" next to index.html.
+       "#t=0.1" after the file name makes phones show the first frame instead of a black box; keep it. -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-3xl mx-auto items-start">
+
+    <figure class="vcard glass rounded-3xl p-2">
+      <div class="vframe">
+        <video src="videos/video1.mp4#t=0.1" autoplay loop muted playsinline disablepictureinpicture preload="metadata"></video>
+        <div class="vfb"><span class="text-2xl">💜</span><span>Video coming soon</span></div>
+      </div>
+      <figcaption class="px-3 py-3 text-center text-sm text-violet-100/85">Pure Joy🤍</figcaption>
+    </figure>
+
+    <figure class="vcard glass rounded-3xl p-2">
+      <div class="vframe">
+        <video src="videos/video2.mp4#t=0.1" autoplay loop muted playsinline disablepictureinpicture preload="metadata"></video>
+        <div class="vfb"><span class="text-2xl">💜</span><span>Video coming soon</span></div>
+      </div>
+      <figcaption class="px-3 py-3 text-center text-sm text-violet-100/85">Always smiling 🌸</figcaption>
+    </figure>
+
+  </div>
+</section>
+
+<!-- ============ 4. FLIP CARDS ============ -->
+<section id="notes" class="px-5 py-20 max-w-5xl mx-auto">
+  <div class="reveal text-center mb-10">
+    <h2 class="font-display text-3xl sm:text-4xl font-semibold grad-text">Notes from the heart</h2>
+    <p class="text-violet-100/75 mt-2 text-sm">Tap or hover a card to read it.</p>
+  </div>
+  <div id="flipGrid" class="reveal grid gap-6 sm:grid-cols-2 lg:grid-cols-4"></div>
+</section>
+
+<!-- ============ OCTOBER’S BEAUTY (photos) ============ -->
+<section id="moments" class="px-5 py-20 max-w-5xl mx-auto">
+  <div class="reveal text-center mb-10">
+    <h2 class="script-title">October’s Beauty</h2>
+    <div class="mx-auto mt-3 h-px w-24 bg-gradient-to-r from-transparent via-pink-300/70 to-transparent"></div>
+  </div>
+
+  <!-- Put your photos in a folder called "images" next to index.html (photo1.jpg, photo2.jpg).
+       If a file isn't in "images", the page also tries the same name next to index.html. -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-3xl mx-auto items-start">
+
+    <figure class="pcard glass rounded-3xl p-2">
+      <div class="pframe">
+        <img src="images/photo1.jpg" data-alt="photo1.jpg" alt="Favorite memory" loading="lazy" decoding="async">
+        <div class="pfb">🤍</div>
+      </div>
+      <figcaption class="px-3 py-3 text-center font-display italic text-violet-100/90">Joje 🌸</figcaption>
+    </figure>
+
+    <figure class="pcard glass rounded-3xl p-2">
+      <div class="pframe">
+        <img src="images/photo2.jpg" data-alt="photo2.jpg" alt="Pure happiness" loading="lazy" decoding="async">
+        <div class="pfb">✨</div>
+      </div>
+      <figcaption class="px-3 py-3 text-center font-display italic text-violet-100/90">Keep Shining ✨</figcaption>
+    </figure>
+
+  </div>
+</section>
+
+<!-- ============ SECRET ENVELOPE ============ -->
+<section id="envelope" class="px-5 py-20 max-w-5xl mx-auto text-center">
+  <div class="reveal mb-10">
+    <h2 class="script-title">Secret Envelope</h2>
+    <div class="mx-auto mt-3 h-px w-24 bg-gradient-to-r from-transparent via-pink-300/70 to-transparent"></div>
+  </div>
+  <div class="float">
+    <button type="button" id="envBtn" class="env" aria-haspopup="dialog" aria-label="Open the secret envelope">
+      <span class="env-back"></span><span class="env-front"></span><span class="env-flap"></span><span class="env-seal"><img src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/2764.svg" alt="❤️" draggable="false" onerror="this.replaceWith(document.createTextNode(this.alt))"></span>
+    </button>
+  </div>
+  <p class="text-violet-200/70 text-sm mt-6">Tap to open</p>
+</section>
+
+<!-- Letter modal (opens from the envelope) -->
+<div id="letterModal" class="letter-modal fixed inset-0 z-[60] items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="letterTitle">
+  <div class="absolute inset-0 bg-[#0b0618]/70 backdrop-blur-sm" data-close></div>
+  <article class="letter relative w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-3xl p-7 sm:p-10">
+    <button type="button" id="letterClose" class="absolute top-4 right-4 h-9 w-9 rounded-full bg-white/10 hover:bg-white/20" aria-label="Close letter">✕</button>
+    <h3 id="letterTitle" class="letter-title text-center">Dear Joje</h3>
+    <div class="letter-body" dir="rtl" lang="ar">
+      <p>بيوم من أيام أكتوبر الحلوة، ولدت أغلى إنسانة على قلبي ما في كلام ممكن يوصف مكانتها عندي..<img class="twemoji" src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f440.svg" alt="👀" draggable="false" onerror="this.replaceWith(document.createTextNode(this.alt))"><img class="twemoji" src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/2764.svg" alt="❤️" draggable="false" onerror="this.replaceWith(document.createTextNode(this.alt))"><img class="twemoji" src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/2764.svg" alt="❤️" draggable="false" onerror="this.replaceWith(document.createTextNode(this.alt))"></p>
+      <p>بتمنالك بهاليوم المميز فيكِ سنين مليانة بنجاحاتك، بأمنياتك الحلوة، وبضحكتك يلي بتنوّر الدنيا.. فأنتِ الخير لكل عام <img class="twemoji" src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/2764.svg" alt="❤️" draggable="false" onerror="this.replaceWith(document.createTextNode(this.alt))">. انشالله ضل منوّر حياتك <img class="twemoji" src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f606.svg" alt="😆" draggable="false" onerror="this.replaceWith(document.createTextNode(this.alt))"><img class="twemoji" src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f606.svg" alt="😆" draggable="false" onerror="this.replaceWith(document.createTextNode(this.alt))"> وصحي كبرتي سنة بس لساتك أحلى وأصغر وحدة بأكتوبر <img class="twemoji" src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f61c.svg" alt="😜" draggable="false" onerror="this.replaceWith(document.createTextNode(this.alt))"><img class="twemoji" src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/2764.svg" alt="❤️" draggable="false" onerror="this.replaceWith(document.createTextNode(this.alt))"></p>
+    </div>
+    <p class="letter-sign">- Hadi</p>
+  </article>
+</div>
+
+<footer class="text-center text-violet-200/60 text-sm py-14">Made with love 💜 Happy Birthday!</footer>
+
+<!-- ============ 5. MUSIC ============ -->
+<!-- ADD YOUR SONG: put the file at music/birthday.mp3. If it's missing, a soft built-in melody plays instead. -->
+<audio id="bgm" loop preload="auto"><source src="music/birthday.mp3" type="audio/mpeg"></audio>
+<button id="musicBtn" aria-label="Toggle music" class="fixed bottom-5 right-5 z-50 btn rounded-full h-14 w-14 flex items-center justify-center">
+  <span class="bars flex items-end gap-[3px] h-6"><span></span><span></span><span></span><span></span><span></span></span>
+</button>
+
+<script>
+/* ---------- Config: edit the memory notes here ---------- */
+const NOTES = [
+  {icon:'🌸', front:'Your smile',      back:'Your smile can turn the heaviest day into a gentle one. Never stop sharing it.'},
+  {icon:'💜', front:'Our Memories',    back:'Every moment we share simply leaves us with a good smile.'},
+  {icon:'🌙', front:'A quiet wish',    back:'May this year bring peace, laughter and everything you secretly hope for.'},
+  {icon:'✨', front:'Just so you know', back:'Some people just carry a natural kind of magic with them, and you\'re definitely one of them.'}
+];
+const $ = id => document.getElementById(id);
+
+
+/* ---------- Scroll reveal ---------- */
+const io = new IntersectionObserver(es => es.forEach(e => e.isIntersecting && e.target.classList.add('show')), {threshold:.15});
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+/* ---------- Start button: sparkle burst + scroll ---------- */
+$('startBtn').addEventListener('click', e => {
+  const r = e.target.getBoundingClientRect();
+  confetti({particleCount:70, spread:80, startVelocity:25, origin:{x:(r.left+r.width/2)/innerWidth, y:(r.top+r.height/2)/innerHeight}, colors:['#c4b5fd','#f9a8d4','#fff','#a78bfa'], scalar:.9});
+  setTimeout(() => $('cake').scrollIntoView({behavior:'smooth'}), 450);
+  startMusic(); // runs bgm.play() right here, inside the click, so browsers allow the audio
+});
+$('startBtn').addEventListener('mouseenter', e => { // small hover sparkle
+  const r = e.target.getBoundingClientRect();
+  confetti({particleCount:10, spread:50, startVelocity:12, ticks:60, origin:{x:(r.left+r.width/2)/innerWidth, y:r.top/innerHeight}, colors:['#f9a8d4','#fff']});
+});
+
+/* ---------- Candles ---------- */
+const NS = 'http://www.w3.org/2000/svg', xs = [95,122,150,178,205];
+document.querySelector('#cake svg defs').insertAdjacentHTML('beforeend', `
+  <radialGradient id="gHalo"><stop offset="0" stop-color="#ffd27a" stop-opacity=".55"/><stop offset="1" stop-color="#f9a8d4" stop-opacity="0"/></radialGradient>
+  <linearGradient id="gOut" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#f472b6"/><stop offset=".45" stop-color="#fb923c"/><stop offset="1" stop-color="#fde047"/></linearGradient>
+  <linearGradient id="gIn" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#fff2a8"/></linearGradient>`);
+xs.forEach((x,i) => {
+  const g = document.createElementNS(NS,'g'); g.setAttribute('class','candle');
+  // Flame sits exactly on the wick (base y=66) and sways from that point; each candle has its own rhythm.
+  g.innerHTML = `<rect x="${x-4}" y="68" width="8" height="40" rx="2" fill="${i%2?'#c4b5fd':'#fbcfe8'}"/>
+    <rect x="${x-4}" y="78" width="8" height="4" fill="#fff" opacity=".5"/>
+    <circle class="halo" cx="${x}" cy="54" r="20" fill="url(#gHalo)" style="animation-delay:-${(i*.37).toFixed(2)}s"/>
+    <g class="flame"><g class="fl" style="animation-duration:${(1.8+i*.23).toFixed(2)}s;animation-delay:-${(i*.61).toFixed(2)}s">
+      <path d="M${x} 36 C${x+2} 44 ${x+8} 50 ${x+7} 58 C${x+6} 64 ${x+3} 67 ${x} 67 C${x-3} 67 ${x-6} 64 ${x-7} 58 C${x-8} 50 ${x-2} 44 ${x} 36Z" fill="url(#gOut)"/>
+      <path d="M${x} 48 C${x+4} 53 ${x+5} 58 ${x+4} 62 C${x+3} 65 ${x+1} 66 ${x} 66 C${x-1} 66 ${x-3} 65 ${x-4} 62 C${x-5} 58 ${x-4} 53 ${x} 48Z" fill="url(#gIn)"/>
+      <ellipse cx="${x}" cy="63" rx="2.6" ry="3.4" fill="#7dd3fc" opacity=".7"/></g></g>
+    <rect x="${x-.8}" y="64" width="1.6" height="6" rx=".8" fill="#4a3b5c"/>
+    <circle class="smoke" cx="${x}" cy="60" r="4" fill="#e9d5ff"/>`;
+  g.addEventListener('click', () => snuff(g));
+  $('candles').appendChild(g);
+});
+const candles = () => [...document.querySelectorAll('.candle')];
+let done = false;
+function checkDone(){
+  if(done || candles().some(c => !c.classList.contains('out'))) return;
+  done = true; stopMic();
+  $('cakeMsg').textContent = '🎉 Wish made! May it come true.';
+  $('blowBtn').classList.add('hidden'); $('relightBtn').classList.remove('hidden');
+  fireworks();
+}
+/* Extinguish one candle (silent=true skips the blow sound) */
+function snuff(c, silent){
+  if(c.classList.contains('out')) return;
+  c.classList.add('out'); if(!silent){ blowSfx(); lean(.7,300); } checkDone();
+}
+function blowAll(){ blowSfx(); lean(.9,450); candles().forEach((c,i) => setTimeout(() => snuff(c,true), i*120)); }
+
+/* ---------- Sound effects ---------- */
+let sfxCtx; const getCtx = () => sfxCtx || (sfxCtx = new (window.AudioContext||window.webkitAudioContext)());
+/* Blowing "whoosh": filtered noise burst. */
+function blowSfx(){
+  const ctx = getCtx(); ctx.resume();
+  const len = ctx.sampleRate * .9, buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+  for(let i=0;i<len;i++) d[i] = Math.random()*2-1;
+  const src = ctx.createBufferSource(); src.buffer = buf;
+  const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 900; f.Q.value = .6;
+  const g = ctx.createGain(); const t = ctx.currentTime;
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.7, t+.12); g.gain.exponentialRampToValueAtTime(.001, t+.85);
+  src.connect(f).connect(g).connect(ctx.destination); src.start(t);
+}
+$('blowBtn').onclick = blowAll;
+$('relightBtn').onclick = () => {
+  done = false; candles().forEach(c => c.classList.remove('out'));
+  $('cakeMsg').textContent = 'Tap each candle, press the button, or blow into your microphone.';
+  $('blowBtn').classList.remove('hidden'); $('relightBtn').classList.add('hidden');
+};
+function fireworks(){
+  const end = Date.now() + 3500, colors = ['#c4b5fd','#f9a8d4','#fde68a','#fff','#a78bfa'];
+  (function frame(){
+    confetti({particleCount:6, angle:60, spread:70, origin:{x:0,y:.7}, colors});
+    confetti({particleCount:6, angle:120, spread:70, origin:{x:1,y:.7}, colors});
+    if(Date.now() < end) requestAnimationFrame(frame);
+  })();
+  for(let i=0;i<5;i++) setTimeout(() => confetti({particleCount:80, spread:360, startVelocity:30, origin:{x:Math.random(), y:Math.random()*.5}, colors}), i*500);
+}
+
+/* ---------- Microphone blow detection (Web Audio API) ---------- */
+let micStream, micCtx, micRaf, micBusy = false;
+const micRoot = document.documentElement;
+function micMsg(msg, warn){ $('micStatus').textContent = msg; if(warn) console.warn('[Birthday mic] ' + msg); }
+
+async function startMic(){
+  micBusy = true;
+  // 1) Browsers only expose the microphone on HTTPS or localhost (file:// works in Chrome/Firefox only).
+  if(!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)){
+    micMsg('The microphone is not available here (it needs HTTPS or localhost). Tap “Blow out candles” instead.', true);
+    micBusy = false; return;
+  }
+  // 2) Ask for permission. The AudioContext is created and resumed inside the click so it never stays suspended.
+  $('micBanner').classList.remove('hidden'); micMsg('');
+  console.info('[Birthday mic] Requesting microphone permission… please click Allow.');
+  micCtx = new (window.AudioContext || window.webkitAudioContext)(); micCtx.resume();
+  try{
+    // Turn off noise suppression / auto gain, otherwise the browser filters out the sound of blowing.
+    micStream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false, noiseSuppression:false, autoGainControl:false}});
+  }catch(e){
+    try{ micCtx.close(); }catch(_){} micCtx = null; micBusy = false; $('micBanner').classList.add('hidden');
+    const why = {NotAllowedError:'Microphone permission was denied. Allow it from the lock icon next to the address bar, then try again.',
+      SecurityError:'The browser blocked the microphone on this page.',
+      NotFoundError:'No microphone was found on this device.',
+      NotReadableError:'The microphone is being used by another app.'}[e.name] || ('Could not start the microphone (' + e.name + ').');
+    micMsg(why + ' Tap “Blow out candles” instead.', true);
+    return;
+  }
+  await micCtx.resume(); micBusy = false; $('micBanner').classList.add('hidden');
+  const an = micCtx.createAnalyser(); an.fftSize = 1024; an.smoothingTimeConstant = .3;
+  micCtx.createMediaStreamSource(micStream).connect(an);
+  const buf = new Uint8Array(an.fftSize); let loud = 0, frames = 0, floor = 0, thr = .08;
+  $('micMeter').classList.remove('hidden'); $('micBtn').textContent = '🎤 Stop listening';
+  micMsg('Listening… blow into the microphone 💨');
+  console.info('[Birthday mic] Microphone is on.');
+  (function loop(){
+    an.getByteTimeDomainData(buf);
+    let sum = 0; for(const v of buf){ const d = (v-128)/128; sum += d*d; }
+    const rms = Math.sqrt(sum/buf.length);
+    $('micFill').style.width = Math.min(100, rms*400) + '%';
+    micRoot.style.setProperty('--blow', Math.min(1, rms*4).toFixed(2)); // flames lean with your breath
+    if(frames < 30){ floor += rms/30; if(++frames === 30) thr = Math.max(.07, floor*2.5 + .04); } // learn the room noise first
+    else {
+      loud = rms > thr ? loud+1 : Math.max(0, loud-1); // sustained loud noise = a blow
+      if(loud > 6){ loud = 0; const lit = candles().filter(c => !c.classList.contains('out'));
+        if(lit.length){ blowSfx(); lit.slice(0,2).forEach(c => snuff(c,true)); } }
+    }
+    micRaf = requestAnimationFrame(loop);
+  })();
+}
+function stopMic(){
+  cancelAnimationFrame(micRaf); micRoot.style.setProperty('--blow', 0);
+  micStream && micStream.getTracks().forEach(t => t.stop());
+  if(micCtx){ try{ micCtx.close(); }catch(e){} }
+  micStream = micCtx = null; micBusy = false;
+  $('micMeter').classList.add('hidden'); $('micBtn').textContent = '🎤 Use microphone'; micMsg('');
+}
+$('micBtn').onclick = () => micStream ? stopMic() : (!micBusy && startMic());
+
+/* ---------- Flip cards ---------- */
+$('flipGrid').innerHTML = NOTES.map(n => `
+  <div class="flip cursor-pointer" tabindex="0" role="button" aria-label="Flip card: ${n.front}">
+    <div class="flip-in">
+      <div class="face glass"><div class="text-5xl mb-3">${n.icon}</div><h3 class="font-display text-xl">${n.front}</h3><p class="text-xs text-violet-200/60 mt-2">Tap to open</p></div>
+      <div class="face back"><p class="font-display italic text-lg leading-relaxed">${n.back}</p></div>
+    </div>
+  </div>`).join('');
+document.querySelectorAll('.flip').forEach(c => {
+  c.onclick = () => c.classList.toggle('on');
+  c.onkeydown = e => (e.key==='Enter'||e.key===' ') && (e.preventDefault(), c.classList.toggle('on'));
+});
+
+/* ---------- Background music (file, with synth fallback) ---------- */
+const bgm = $('bgm'), mBtn = $('musicBtn'); let on = false, synth;   // on = "the person wants music"
+
+/* The bottom button always mirrors what is REALLY playing (the file or the fallback melody). */
+function syncMusicUI(){
+  const playing = !!synth || (!bgm.paused && !bgm.ended);
+  mBtn.classList.toggle('playing', playing);
+  mBtn.setAttribute('aria-pressed', playing);
+  mBtn.setAttribute('aria-label', playing ? 'Pause music' : 'Play music');
+}
+['play','playing','pause','ended'].forEach(ev => bgm.addEventListener(ev, syncMusicUI));
+
+function startSynth(){ // gentle fallback melody if music/birthday.mp3 is missing
+  const ctx = getCtx(); ctx.resume();                                // shared audio context (unlocked by the click)
+  const g = ctx.createGain(); g.gain.value = .08; g.connect(ctx.destination);
+  const seq = [392,392,440,392,523,494, 392,392,440,392,587,523, 392,392,784,659,523,494,440, 698,698,659,523,587,523];
+  let i = 0, t = setInterval(() => {
+    const o = ctx.createOscillator(), e = ctx.createGain(); o.type='sine'; o.frequency.value = seq[i++ % seq.length];
+    e.gain.setValueAtTime(1, ctx.currentTime); e.gain.exponentialRampToValueAtTime(.001, ctx.currentTime+.5);
+    o.connect(e).connect(g); o.start(); o.stop(ctx.currentTime+.5);
+  }, 450);
+  return {stop(){ clearInterval(t); g.disconnect(); }};
+}
+function fadeIn(a, to, ms){ // soft volume ramp so the music never starts abruptly
+  const t0 = performance.now();
+  (function step(t){ const k = Math.min(1, (t - t0)/ms); a.volume = to*k; if(k < 1 && on) requestAnimationFrame(step); })(t0);
+}
+
+/* Must be called from a click/tap: play() is invoked synchronously inside the gesture. */
+function startMusic(){
+  if(synth || (on && !bgm.paused)) return;                           // already playing
+  on = true; bgm.volume = 0;
+  getCtx().resume().catch(() => {});                                 // unlock Web Audio too (used by the fallback melody)
+  const p = bgm.play();                                              // explicit audio.play()
+  syncMusicUI();
+  if(p) p.then(() => { fadeIn(bgm, .6, 1500); syncMusicUI(); }).catch(playFailed);
+}
+function playFailed(e){                                              // never throws: always lands in a clean state
+  bgm.pause();
+  if(e && e.name === 'NotAllowedError'){                             // browser blocked autoplay: wait for the next tap
+    on = false; console.warn('[Birthday music] Autoplay was blocked by the browser. Tap the music button to start.');
+  }else{                                                             // file missing / unsupported: soft built-in melody
+    console.warn('[Birthday music] music/birthday.mp3 could not play (' + (e && e.name) + '). Using the built-in melody.');
+    if(on && !synth) synth = startSynth();
+  }
+  syncMusicUI();
+}
+function stopMusic(){ bgm.pause(); synth && synth.stop(); synth = null; on = false; syncMusicUI(); }
+bgm.querySelector('source').addEventListener('error', () => { if(on && !synth){ bgm.pause(); synth = startSynth(); syncMusicUI(); } }); // file missing -> fallback
+mBtn.onclick = () => (synth || !bgm.paused) ? stopMusic() : startMusic();
+syncMusicUI();
+
+/* ===== Flames lean when blown ===== */
+function lean(v,ms){ document.documentElement.style.setProperty('--blow',v); setTimeout(()=>document.documentElement.style.setProperty('--blow',0),ms); }
+
+/* ===== Hero title: gradient letters + soft shimmer (all text is baked into the HTML) ===== */
+(function(){
+  const hx = h => [1,3,5].map(i => parseInt(h.slice(i,i+2),16));
+  const mix = (a,b,t) => '#' + hx(a).map((v,i) => Math.round(v + (hx(b)[i]-v)*t).toString(16).padStart(2,'0')).join('');
+  const C = ['#c4b5fd','#f9a8d4','#fde2f3'], grad = t => t < .5 ? mix(C[0],C[1],t*2) : mix(C[1],C[2],(t-.5)*2);
+  const el = $('heroWords'), words = el.textContent.trim().split(/\s+/), total = words.join('').length; let i = 0;
+  el.setAttribute('aria-label', el.textContent.trim());
+  el.innerHTML = words.map(w => '<span class="w" aria-hidden="true">' + [...w].map(ch =>
+    `<span class="ch a-shimmer" style="color:${grad(i/(total-1))};animation-delay:${(i++*.07).toFixed(2)}s">${ch}</span>`).join('') + '</span>').join(' ');
+})();
+
+/* ===== Media fallbacks (soft placeholders if a file is missing) ===== */
+document.querySelectorAll('.vframe video').forEach(v => {
+  const fail = () => { v.closest('.vframe').classList.add('missing'); console.warn('[Birthday] Could not load ' + v.getAttribute('src') + ' (check the videos/ folder).'); };
+  v.addEventListener('error', fail); if(v.error) fail();
+});
+document.querySelectorAll('.pframe img').forEach(img => {
+  const fail = () => {
+    if(img.dataset.alt){ img.src = img.dataset.alt; delete img.dataset.alt; return; } // try photo next to index.html
+    img.closest('.pframe').classList.add('missing'); console.warn('[Birthday] Could not load ' + img.getAttribute('src') + ' (check the images/ folder).');
+  };
+  img.addEventListener('error', fail); if(img.complete && img.naturalWidth === 0 && img.currentSrc) fail();
+});
+
+/* ===== Videos stay silent so they never interrupt the background music ===== */
+document.querySelectorAll('.vframe video').forEach(v => {
+  v.muted = true;
+  v.addEventListener('volumechange', () => { if(!v.muted) v.muted = true; });
+});
+/* ===== Keep the background music going (e.g. after a phone call or switching tabs) ===== */
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible' && on && !synth && bgm.paused) bgm.play().catch(() => {});
+});
+
+/* ===== Videos play when visible and pause when scrolled away ===== */
+(function(){
+  const vids = document.querySelectorAll('.vframe video');
+  const io2 = new IntersectionObserver(entries => entries.forEach(e => {
+    const v = e.target;
+    if(e.isIntersecting) v.play().catch(() => {});   // muted, so browsers allow it
+    else v.pause();
+  }), {threshold: .35});
+  vids.forEach(v => { v.pause(); io2.observe(v); });   // wait for the section to be seen before playing
+})();
+
+/* ===== Local preview / non-HTTPS: the mic is likely blocked, so point to the Blow button ===== */
+if(!window.isSecureContext || location.protocol === 'file:'){
+  micMsg('Local preview: the microphone may be blocked here. Tap “Blow out candles” instead, or open this page over HTTPS.', true);
+}
+
+/* ===== Floating SVG rose petals: start as soon as the page opens ===== */
+(function(){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;   // respect accessibility settings
+  /* One shaded rose-petal shape (soft cleft at the top, narrow base, veins, highlight, translucent edge).
+     Each colour variant is rendered once as a data-URI image, so the animation stays cheap. */
+  const petalSVG = (dark, mid, light) => `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 80'>
+    <defs>
+      <linearGradient id='g' x1='.5' y1='1' x2='.5' y2='0'><stop offset='0' stop-color='${dark}'/><stop offset='.55' stop-color='${mid}'/><stop offset='1' stop-color='${light}'/></linearGradient>
+      <radialGradient id='h' cx='.34' cy='.3' r='.62'><stop offset='0' stop-color='#fff' stop-opacity='.6'/><stop offset='1' stop-color='#fff' stop-opacity='0'/></radialGradient>
+      <radialGradient id='s' cx='.5' cy='1' r='.55'><stop offset='0' stop-color='${dark}' stop-opacity='.7'/><stop offset='1' stop-color='${dark}' stop-opacity='0'/></radialGradient>
+    </defs>
+    <path d='M30 78C14 66 2 48 6 28C9 12 22 3 30 9C38 3 51 12 54 28C58 48 46 66 30 78Z' fill='url(#g)' fill-opacity='.9'/>
+    <path d='M30 78C14 66 2 48 6 28C9 12 22 3 30 9C38 3 51 12 54 28C58 48 46 66 30 78Z' fill='url(#s)'/>
+    <path d='M30 78C14 66 2 48 6 28C9 12 22 3 30 9C38 3 51 12 54 28C58 48 46 66 30 78Z' fill='url(#h)'/>
+    <g fill='none' stroke='${dark}' stroke-opacity='.28' stroke-width='.8' stroke-linecap='round'>
+      <path d='M30 75C29 56 28 34 30 14'/><path d='M30 73C22 58 14 44 11 29'/><path d='M30 73C38 58 46 44 49 29'/>
+    </g>
+    <path d='M9 24C13 12 23 6 30 11C37 6 47 12 51 24' fill='none' stroke='#fff' stroke-opacity='.38' stroke-width='1.1' stroke-linecap='round'/>
+  </svg>`;
+  const url = (...c) => `url("data:image/svg+xml,${encodeURIComponent(petalSVG(...c))}")`;
+  const VARIANTS = [
+    url('#f472b6','#f9a8d4','#fde2f3'),   // soft pink
+    url('#f472b6','#f9a8d4','#fde2f3'),
+    url('#be185d','#ec4899','#fbcfe8'),   // rose
+    url('#9d174d','#db2777','#f9a8d4'),   // deep pink
+    url('#7f1034','#be123c','#fb7185')    // crimson
+  ];
+  const box = $('petals');
+  const count = innerWidth < 640 ? 10 : 16;                            // fewer petals on phones = smoother
+  const r = (a,b) => a + Math.random()*(b-a);
+  for(let i = 0; i < count; i++){
+    const p = document.createElement('div'), pt = document.createElement('i'), w = r(22,42);
+    p.className = 'petal';
+    p.style.left = r(0,94).toFixed(1) + '%';
+    p.style.animationDuration = r(13,22).toFixed(1) + 's';             // slow, gentle fall
+    p.style.animationDelay = (i*.5 + r(0,.6)).toFixed(2) + 's';        // staggered so they trickle in from the top
+    pt.style.width = w.toFixed(0) + 'px'; pt.style.height = (w*4/3).toFixed(0) + 'px';
+    pt.style.backgroundImage = VARIANTS[i % VARIANTS.length];
+    pt.style.opacity = r(.55,.9).toFixed(2);                           // slightly translucent
+    pt.style.setProperty('--sw', r(18,50).toFixed(0) + 'px');          // sideways sway distance
+    pt.style.setProperty('--rot', r(20,60).toFixed(0) + 'deg');        // gentle tumbling rotation
+    pt.style.animationDuration = r(3.5,6.5).toFixed(1) + 's';
+    p.appendChild(pt); box.appendChild(p);
+  }
+  box.addEventListener('animationiteration', e => {                    // new random spot each time a petal restarts
+    if(e.animationName === 'petalFall') e.target.style.left = r(0,94).toFixed(1) + '%';
+  });
+  document.addEventListener('visibilitychange', () => box.classList.toggle('paused', document.hidden)); // save battery in background tabs
+})();
+
+/* ===== Secret envelope: opens the letter modal ===== */
+(function(){
+  const modal = $('letterModal'), openBtn = $('envBtn'), closeBtn = $('letterClose');
+  function openLetter(){
+    modal.classList.add('open'); document.body.style.overflow = 'hidden'; closeBtn.focus();
+    confetti({particleCount:40, spread:70, origin:{y:.6}, colors:['#f9a8d4','#c4b5fd','#fff'], scalar:.9});
+  }
+  function closeLetter(){ modal.classList.remove('open'); document.body.style.overflow = ''; openBtn.focus(); }
+  openBtn.addEventListener('click', openLetter);
+  closeBtn.addEventListener('click', closeLetter);
+  modal.addEventListener('click', e => { if(e.target.hasAttribute('data-close')) closeLetter(); });
+  document.addEventListener('keydown', e => {
+    if(!modal.classList.contains('open')) return;
+    if(e.key === 'Escape') closeLetter();
+    if(e.key === 'Tab'){ e.preventDefault(); closeBtn.focus(); }   // keep focus inside the dialog
+  });
+})();
+
+/* ===== Tap-to-open overlay: fade out, then start the music inside the same tap ===== */
+(function(){
+  const ov = $('openOverlay'); let opened = false;
+  document.body.style.overflow = 'hidden';                 // no scrolling behind the overlay
+  function openSurprise(){
+    if(opened) return; opened = true;
+    startMusic();                                          // bgm.play() runs directly inside the tap
+    ov.classList.add('hide');
+    document.body.style.overflow = '';
+    setTimeout(() => ov.remove(), 1000);
+  }
+  ov.addEventListener('click', openSurprise);
+  ov.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); openSurprise(); } });
+  ov.focus({preventScroll:true});
+})();
+</script>
+</body>
+</html>
