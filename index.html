@@ -277,7 +277,10 @@
 
 <!-- ============ 5. MUSIC ============ -->
 <!-- ADD YOUR SONG: put the file at music/birthday.mp3. If it's missing, a soft built-in melody plays instead. -->
-<audio id="bgm" loop preload="auto"><source src="music/birthday.mp3" type="audio/mpeg"></audio>
+<audio id="bgm" loop preload="auto" playsinline>
+  <source src="music/song.mp3" type="audio/mpeg">      <!-- ✏️ your music file -->
+  <source src="music/birthday.mp3" type="audio/mpeg">  <!-- optional second name, used only if song.mp3 is missing -->
+</audio>
 <button id="musicBtn" aria-label="Toggle music" class="fixed bottom-5 right-5 z-50 btn rounded-full h-14 w-14 flex items-center justify-center">
   <span class="bars flex items-end gap-[3px] h-6"><span></span><span></span><span></span><span></span><span></span></span>
 </button>
@@ -449,18 +452,21 @@ document.querySelectorAll('.flip').forEach(c => {
 
 /* ---------- Background music (file, with synth fallback) ---------- */
 const bgm = $('bgm'), mBtn = $('musicBtn'); let on = false, synth;   // on = "the person wants music"
+const bgmSources = bgm.querySelectorAll('source'), lastSource = bgmSources[bgmSources.length - 1];
 
 /* The bottom button always mirrors what is REALLY playing (the file or the fallback melody). */
 function syncMusicUI(){
-  const playing = !!synth || (!bgm.paused && !bgm.ended);
+  const playing = (!!synth && !!sfxCtx && sfxCtx.state === 'running') || (!bgm.paused && !bgm.ended && !bgm.error);
   mBtn.classList.toggle('playing', playing);
   mBtn.setAttribute('aria-pressed', playing);
   mBtn.setAttribute('aria-label', playing ? 'Pause music' : 'Play music');
 }
-['play','playing','pause','ended'].forEach(ev => bgm.addEventListener(ev, syncMusicUI));
+bgm.onplay = bgm.onplaying = bgm.onpause = bgm.onended = syncMusicUI;
+bgm.onerror = () => { console.warn('[Birthday music] The audio element reported an error.'); syncMusicUI(); };
 
-function startSynth(){ // gentle fallback melody if music/birthday.mp3 is missing
-  const ctx = getCtx(); ctx.resume();                                // shared audio context (unlocked by the click)
+function startSynth(){ // gentle fallback melody if the music file is missing
+  const ctx = getCtx(); ctx.resume();                                // shared audio context (unlocked by the tap)
+  ctx.onstatechange = syncMusicUI;
   const g = ctx.createGain(); g.gain.value = .08; g.connect(ctx.destination);
   const seq = [392,392,440,392,523,494, 392,392,440,392,587,523, 392,392,784,659,523,494,440, 698,698,659,523,587,523];
   let i = 0, t = setInterval(() => {
@@ -470,32 +476,31 @@ function startSynth(){ // gentle fallback melody if music/birthday.mp3 is missin
   }, 450);
   return {stop(){ clearInterval(t); g.disconnect(); }};
 }
-function fadeIn(a, to, ms){ // soft volume ramp so the music never starts abruptly
-  const t0 = performance.now();
-  (function step(t){ const k = Math.min(1, (t - t0)/ms); a.volume = to*k; if(k < 1 && on) requestAnimationFrame(step); })(t0);
-}
 
-/* Must be called from a click/tap: play() is invoked synchronously inside the gesture. */
-function startMusic(){
+/* Must be called from a tap/click: play() runs synchronously inside the gesture.
+   startMusic(true) restarts the song from the beginning. */
+function startMusic(fresh){
   if(synth || (on && !bgm.paused)) return;                           // already playing
-  on = true; bgm.volume = 0;
+  on = true;
+  if(fresh){ try{ bgm.currentTime = 0; }catch(e){} }
+  bgm.muted = false; bgm.volume = 1;                                 // never start muted or quiet
   getCtx().resume().catch(() => {});                                 // unlock Web Audio too (used by the fallback melody)
-  const p = bgm.play();                                              // explicit audio.play()
+  const p = bgm.play();                                              // explicit audio.play() inside the gesture
   syncMusicUI();
-  if(p) p.then(() => { fadeIn(bgm, .6, 1500); syncMusicUI(); }).catch(playFailed);
+  if(p) p.then(syncMusicUI).catch(playFailed);
 }
 function playFailed(e){                                              // never throws: always lands in a clean state
   bgm.pause();
-  if(e && e.name === 'NotAllowedError'){                             // browser blocked autoplay: wait for the next tap
-    on = false; console.warn('[Birthday music] Autoplay was blocked by the browser. Tap the music button to start.');
+  if(e && e.name === 'NotAllowedError'){                             // browser blocked playback: the button shows "paused" and the next tap retries
+    on = false; console.warn('[Birthday music] Playback was blocked by the browser. Tap the music button to start.');
   }else{                                                             // file missing / unsupported: soft built-in melody
-    console.warn('[Birthday music] music/birthday.mp3 could not play (' + (e && e.name) + '). Using the built-in melody.');
+    console.warn('[Birthday music] The music file could not play (' + (e && e.name) + '). Using the built-in melody.');
     if(on && !synth) synth = startSynth();
   }
   syncMusicUI();
 }
 function stopMusic(){ bgm.pause(); synth && synth.stop(); synth = null; on = false; syncMusicUI(); }
-bgm.querySelector('source').addEventListener('error', () => { if(on && !synth){ bgm.pause(); synth = startSynth(); syncMusicUI(); } }); // file missing -> fallback
+lastSource.addEventListener('error', () => { if(on && !synth){ bgm.pause(); synth = startSynth(); syncMusicUI(); } }); // every file missing -> fallback
 mBtn.onclick = () => (synth || !bgm.paused) ? stopMusic() : startMusic();
 syncMusicUI();
 
@@ -623,10 +628,17 @@ if(!window.isSecureContext || location.protocol === 'file:'){
 /* ===== Tap-to-open overlay: fade out, then start the music inside the same tap ===== */
 (function(){
   const ov = $('openOverlay'); let opened = false;
+  /* Every load/reload starts clean: scrolled to the top with the overlay shown, so a fresh tap starts the audio. */
+  if('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  window.scrollTo(0,0);
+  window.addEventListener('pageshow', e => { if(e.persisted) location.reload(); }); // page restored from the back/forward cache -> start over
   document.body.style.overflow = 'hidden';                 // no scrolling behind the overlay
   function openSurprise(){
     if(opened) return; opened = true;
-    startMusic();                                          // bgm.play() runs directly inside the tap
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();   // created inside the tap
+    if (audioCtx.state === 'suspended') { audioCtx.resume(); }
+    sfxCtx = audioCtx;                                     // the page's sound effects reuse this unlocked context
+    startMusic(true);                                      // currentTime = 0, unmuted, volume 1, play() inside the tap
     ov.classList.add('hide');
     document.body.style.overflow = '';
     setTimeout(() => ov.remove(), 1000);
