@@ -481,6 +481,13 @@ function fireworks(){
 /* ---------- Microphone blow detection ---------- */
 const root = document.documentElement;
 const mic = {stream:null, source:null, raf:0, busy:false};
+/* Blow sensitivity (lower numbers = more sensitive). Was: minLevel .07, noiseMult 2.5, noiseAdd .04, frames 6. */
+const BLOW = {
+  minLevel: .03,    // the trigger level never goes below this volume (0 to 1)
+  noiseMult: 2,     // trigger level = room noise x this ...
+  noiseAdd: .015,   // ... + this
+  frames: 4         // the breath must stay above that level for more than this many frames (~1/60 s each, so about 0.08 s)
+};
 function micMsg(msg, warn){ $('micStatus').textContent = msg; if(warn) console.warn('[Birthday mic] ' + msg); }
 
 async function startMic(){
@@ -509,7 +516,7 @@ async function startMic(){
   $('micBanner').classList.add('hidden'); mic.busy = false;
   const an = ctx.createAnalyser(); an.fftSize = 1024; an.smoothingTimeConstant = .3;
   mic.source = ctx.createMediaStreamSource(mic.stream); mic.source.connect(an);
-  const buf = new Uint8Array(an.fftSize); let loud = 0, frames = 0, floor = 0, thr = .08;
+  const buf = new Uint8Array(an.fftSize); let loud = 0, frames = 0, floor = 0, thr = BLOW.minLevel;
   $('micMeter').classList.remove('hidden'); $('micBtn').textContent = '🎤 Stop listening';
   micMsg('Listening… blow into the microphone 💨');
   (function loop(){
@@ -518,10 +525,10 @@ async function startMic(){
     const rms = Math.sqrt(sum/buf.length);
     $('micFill').style.width = Math.min(100, rms*400) + '%';
     root.style.setProperty('--blow', Math.min(1, rms*4).toFixed(2));   // flames lean with your breath
-    if(frames < 30){ floor += rms/30; if(++frames === 30) thr = Math.max(.07, floor*2.5 + .04); } // learn the room noise first
+    if(frames < 30){ floor += rms/30; if(++frames === 30) thr = Math.max(BLOW.minLevel, floor*BLOW.noiseMult + BLOW.noiseAdd); } // learn the room noise first
     else {
       loud = rms > thr ? loud+1 : Math.max(0, loud-1);                  // sustained loud noise = a blow
-      if(loud > 6){ loud = 0; const lit = candles().filter(c => !c.classList.contains('out'));
+      if(loud > BLOW.frames){ loud = 0; const lit = candles().filter(c => !c.classList.contains('out'));
         if(lit.length){ Sound.blow(); lit.slice(0,2).forEach(c => snuff(c,true)); } }
     }
     mic.raf = requestAnimationFrame(loop);
