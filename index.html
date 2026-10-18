@@ -4,13 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Happy Birthday ✨</title>
-<!-- Fonts: Playfair Display (headlines) + Poppins (UI) -->
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,800;1,500&family=Poppins:wght@300;400;500;600&family=Dancing+Script:wght@600;700&family=Great+Vibes&family=Pacifico&family=Cinzel:wght@600;800&display=swap" rel="stylesheet">
+<!-- Fonts: Playfair Display, Poppins (UI), Dancing Script + Great Vibes (romantic script) -->
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,800;1,500&family=Poppins:wght@300;400;500;600&family=Dancing+Script:wght@600;700&family=Great+Vibes&display=swap" rel="stylesheet">
 <!-- Tailwind (play CDN) + canvas-confetti -->
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 <style>
-  :root{--violet:#7c6cf0;--rose:#f7a8d0;--ink:#120c26}
+  :root{--ink:#120c26}
   html{scroll-behavior:smooth}
   body{font-family:'Poppins',sans-serif;color:#f5ecff;background:var(--ink);overflow-x:hidden}
   .font-display{font-family:'Playfair Display',serif}
@@ -31,8 +31,7 @@
   /* Scroll reveal */
   .reveal{opacity:0;transform:translateY(28px);transition:opacity .9s,transform .9s}
   .reveal.show{opacity:1;transform:none}
-  /* Candle flame */
-  /* Realistic flame: anchored to the wick (fill-box origin), organic sway, soft halo */
+  /* Candle flame: realistic, anchored to the wick (fill-box origin), organic sway, soft halo */
   .flame{transform-box:fill-box;transform-origin:50% 100%;transform:rotate(calc(var(--blow,0)*28deg));transition:opacity .45s,transform .25s}
   .fl{transform-box:fill-box;transform-origin:50% 100%;animation:sway 2.1s ease-in-out infinite}
   @keyframes sway{0%,100%{transform:rotate(-1.4deg) scale(1,1)}20%{transform:rotate(1.8deg) scale(.96,1.06)}45%{transform:rotate(-.6deg) scale(1.03,.95)}70%{transform:rotate(1.2deg) scale(.98,1.07)}}
@@ -73,8 +72,6 @@
   @media(hover:hover){.flip:hover .flip-in{transform:rotateY(180deg)}}
   .face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:1.5rem;padding:1.5rem;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
   .back{transform:rotateY(180deg);background:linear-gradient(145deg,rgba(139,124,246,.4),rgba(244,114,182,.35));border:1px solid rgba(255,255,255,.25)}
-  /* Video cards */
-  
   /* Music visualiser */
   .bars span{display:block;width:3px;border-radius:2px;background:#fff;height:6px}
   .playing .bars span{animation:bar 1s ease-in-out infinite}
@@ -189,7 +186,7 @@
 
     <figure class="vcard glass rounded-3xl p-2">
       <div class="vframe">
-        <video src="videos/video1.mp4#t=0.1" autoplay loop muted playsinline disablepictureinpicture preload="metadata"></video>
+        <video src="videos/video1.mp4#t=0.1" autoplay loop muted playsinline webkit-playsinline disablepictureinpicture preload="metadata"></video>
         <div class="vfb"><span class="text-2xl">💜</span><span>Video coming soon</span></div>
       </div>
       <figcaption class="px-3 py-3 text-center text-sm text-violet-100/85">Pure Joy🤍</figcaption>
@@ -197,7 +194,7 @@
 
     <figure class="vcard glass rounded-3xl p-2">
       <div class="vframe">
-        <video src="videos/video2.mp4#t=0.1" autoplay loop muted playsinline disablepictureinpicture preload="metadata"></video>
+        <video src="videos/video2.mp4#t=0.1" autoplay loop muted playsinline webkit-playsinline disablepictureinpicture preload="metadata"></video>
         <div class="vfb"><span class="text-2xl">💜</span><span>Video coming soon</span></div>
       </div>
       <figcaption class="px-3 py-3 text-center text-sm text-violet-100/85">Always smiling 🌸</figcaption>
@@ -276,12 +273,13 @@
 <footer class="text-center text-violet-200/60 text-sm py-14">Made with love 💜 Happy Birthday!</footer>
 
 <!-- ============ 5. MUSIC ============ -->
-<!-- ADD YOUR SONG: put the file at music/birthday.mp3. If it's missing, a soft built-in melody plays instead. -->
-<audio id="bgm" loop preload="auto" playsinline>
-  <source src="music/song.mp3" type="audio/mpeg">      <!-- ✏️ your music file -->
-  <source src="music/birthday.mp3" type="audio/mpeg">  <!-- optional second name, used only if song.mp3 is missing -->
+<!-- ✏️ Put your song in a folder called "music" next to index.html (song.mp3, or birthday.mp3 as a second name).
+     If neither file can be loaded, a soft built-in melody plays instead. -->
+<audio id="bgm" loop preload="auto">
+  <source src="music/song.mp3" type="audio/mpeg">
+  <source src="music/birthday.mp3" type="audio/mpeg">
 </audio>
-<button id="musicBtn" aria-label="Toggle music" class="fixed bottom-5 right-5 z-50 btn rounded-full h-14 w-14 flex items-center justify-center">
+<button id="musicBtn" aria-label="Play music" aria-pressed="false" class="fixed bottom-5 right-5 z-50 btn rounded-full h-14 w-14 flex items-center justify-center">
   <span class="bars flex items-end gap-[3px] h-6"><span></span><span></span><span></span><span></span><span></span></span>
 </button>
 
@@ -295,6 +293,121 @@ const NOTES = [
 ];
 const $ = id => document.getElementById(id);
 
+/* ===== Sound engine: one <audio> element + one shared Web Audio context ===== */
+const Sound = (() => {
+  const audio = $('bgm'), btn = $('musicBtn');
+  let ctx = null;         // shared Web Audio context, created inside the first tap
+  let fallback = null;    // built-in melody, used only when no music file can be loaded
+  let wanted = false;     // the visitor asked for music (so we can resume after an interruption)
+  let noFile = false;     // true once every file in <audio> has failed to load
+
+  /* The button always answers one question: is sound really coming out of the speakers? */
+  function sync(){
+    const sounding = fallback ? ctx.state === 'running'
+                              : !noFile && !audio.paused && !audio.muted && !audio.ended && !audio.error && audio.readyState >= 2;
+    btn.classList.toggle('playing', sounding);
+    btn.setAttribute('aria-pressed', sounding);
+    btn.setAttribute('aria-label', sounding ? 'Pause music' : 'Play music');
+    return sounding;
+  }
+  audio.onplay = audio.onplaying = audio.onwaiting = audio.onpause = audio.onended = audio.onvolumechange = sync;
+  audio.onerror = () => { console.warn('[Birthday music] The audio element reported an error.'); sync(); };
+
+  function context(){
+    if(!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if(ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+
+  /* Silent pre-load on page open, so the track is buffered and ready for the first tap. */
+  function preload(){
+    audio.muted = true;
+    audio.play().catch(() => {});
+  }
+
+  /* First-tap unlock. Everything here runs synchronously inside the user gesture. */
+  function unlock(){
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') { audioCtx.resume(); }
+    ctx = audioCtx;
+    start(true);
+  }
+
+  /* Play the song unmuted at full volume. Call it from a tap/click. restart = begin at 0:00. */
+  function start(restart){
+    if(sync()) return;                                  // already sounding
+    wanted = true; stopFallback();
+    if(noFile){ startFallback(); return; }
+    if(restart){ try{ audio.currentTime = 0; }catch(e){} }
+    audio.muted = false; audio.volume = 1.0;
+    context();
+    const p = audio.play();
+    sync();
+    if(p) p.then(sync).catch(onPlayError);
+  }
+  function onPlayError(e){
+    if(e && e.name === 'AbortError') return sync();     // play() was interrupted by a pause: not a real failure
+    audio.pause();
+    if(e && e.name === 'NotAllowedError'){              // browser blocked it: button shows "paused", the next tap retries
+      wanted = false;
+      console.warn('[Birthday music] Playback was blocked by the browser. Tap the music button to start.');
+    }else{                                              // file missing or unsupported: soft built-in melody
+      console.warn('[Birthday music] The music file could not play (' + (e && e.name) + '). Using the built-in melody.');
+      startFallback();
+    }
+    sync();
+  }
+  function pause(){ wanted = false; audio.pause(); stopFallback(); sync(); }
+  function toggle(){ sync() ? pause() : start(); }
+
+  /* Built-in melody (only when the music file can't be loaded) */
+  function startFallback(){
+    if(!wanted || fallback) return;
+    const c = context(), out = c.createGain();
+    out.gain.value = .08; out.connect(c.destination); c.onstatechange = sync;
+    const seq = [392,392,440,392,523,494, 392,392,440,392,587,523, 392,392,784,659,523,494,440, 698,698,659,523,587,523];
+    let i = 0;
+    const timer = setInterval(() => {
+      const o = c.createOscillator(), e = c.createGain(), t = c.currentTime;
+      o.type = 'sine'; o.frequency.value = seq[i++ % seq.length];
+      e.gain.setValueAtTime(1, t); e.gain.exponentialRampToValueAtTime(.001, t + .5);
+      o.connect(e).connect(out); o.start(t); o.stop(t + .5);
+    }, 450);
+    fallback = {stop(){ clearInterval(timer); out.disconnect(); }};
+    sync();
+  }
+  function stopFallback(){ if(fallback){ fallback.stop(); fallback = null; } }
+
+  /* Soft "whoosh" when a candle is blown out */
+  function blow(){
+    const c = context(), len = Math.floor(c.sampleRate * .9), t = c.currentTime;
+    const buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+    for(let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    const src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+    src.buffer = buf; f.type = 'bandpass'; f.frequency.value = 900; f.Q.value = .6;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.7, t + .12); g.gain.exponentialRampToValueAtTime(.001, t + .85);
+    src.connect(f).connect(g).connect(c.destination); src.start(t);
+  }
+
+  /* If every source fails to load, switch to the built-in melody (once the visitor has asked for music). */
+  const sources = audio.querySelectorAll('source');
+  sources[sources.length - 1].addEventListener('error', () => {
+    console.warn('[Birthday music] No music file could be loaded from the music/ folder.');
+    noFile = true; audio.pause(); startFallback(); sync();
+  });
+
+  /* Come back from a phone call or another tab: pick the music up again. */
+  document.addEventListener('visibilitychange', () => {
+    if(document.hidden || !wanted) return;
+    if(ctx && ctx.state !== 'running') ctx.resume().catch(() => {});
+    if(!fallback && audio.paused) audio.play().catch(() => {});
+  });
+
+  btn.onclick = toggle;
+  sync();
+  return {preload, unlock, start, pause, context, blow};
+})();
+
 
 /* ---------- Scroll reveal ---------- */
 const io = new IntersectionObserver(es => es.forEach(e => e.isIntersecting && e.target.classList.add('show')), {threshold:.15});
@@ -305,7 +418,7 @@ $('startBtn').addEventListener('click', e => {
   const r = e.target.getBoundingClientRect();
   confetti({particleCount:70, spread:80, startVelocity:25, origin:{x:(r.left+r.width/2)/innerWidth, y:(r.top+r.height/2)/innerHeight}, colors:['#c4b5fd','#f9a8d4','#fff','#a78bfa'], scalar:.9});
   setTimeout(() => $('cake').scrollIntoView({behavior:'smooth'}), 450);
-  startMusic(); // runs bgm.play() right here, inside the click, so browsers allow the audio
+  Sound.start();   // retry here if the first tap was ever blocked (does nothing while music is playing)
 });
 $('startBtn').addEventListener('mouseenter', e => { // small hover sparkle
   const r = e.target.getBoundingClientRect();
@@ -345,23 +458,10 @@ function checkDone(){
 /* Extinguish one candle (silent=true skips the blow sound) */
 function snuff(c, silent){
   if(c.classList.contains('out')) return;
-  c.classList.add('out'); if(!silent){ blowSfx(); lean(.7,300); } checkDone();
+  c.classList.add('out'); if(!silent){ Sound.blow(); lean(.7,300); } checkDone();
 }
-function blowAll(){ blowSfx(); lean(.9,450); candles().forEach((c,i) => setTimeout(() => snuff(c,true), i*120)); }
+function blowAll(){ Sound.blow(); lean(.9,450); candles().forEach((c,i) => setTimeout(() => snuff(c,true), i*120)); }
 
-/* ---------- Sound effects ---------- */
-let sfxCtx; const getCtx = () => sfxCtx || (sfxCtx = new (window.AudioContext||window.webkitAudioContext)());
-/* Blowing "whoosh": filtered noise burst. */
-function blowSfx(){
-  const ctx = getCtx(); ctx.resume();
-  const len = ctx.sampleRate * .9, buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
-  for(let i=0;i<len;i++) d[i] = Math.random()*2-1;
-  const src = ctx.createBufferSource(); src.buffer = buf;
-  const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 900; f.Q.value = .6;
-  const g = ctx.createGain(); const t = ctx.currentTime;
-  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.7, t+.12); g.gain.exponentialRampToValueAtTime(.001, t+.85);
-  src.connect(f).connect(g).connect(ctx.destination); src.start(t);
-}
 $('blowBtn').onclick = blowAll;
 $('relightBtn').onclick = () => {
   done = false; candles().forEach(c => c.classList.remove('out'));
@@ -378,27 +478,26 @@ function fireworks(){
   for(let i=0;i<5;i++) setTimeout(() => confetti({particleCount:80, spread:360, startVelocity:30, origin:{x:Math.random(), y:Math.random()*.5}, colors}), i*500);
 }
 
-/* ---------- Microphone blow detection (Web Audio API) ---------- */
-let micStream, micCtx, micRaf, micBusy = false;
-const micRoot = document.documentElement;
+/* ---------- Microphone blow detection ---------- */
+const root = document.documentElement;
+const mic = {stream:null, source:null, raf:0, busy:false};
 function micMsg(msg, warn){ $('micStatus').textContent = msg; if(warn) console.warn('[Birthday mic] ' + msg); }
 
 async function startMic(){
-  micBusy = true;
-  // 1) Browsers only expose the microphone on HTTPS or localhost (file:// works in Chrome/Firefox only).
+  if(mic.busy) return; mic.busy = true;
+  // Browsers only expose the microphone on HTTPS or localhost.
   if(!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)){
     micMsg('The microphone is not available here (it needs HTTPS or localhost). Tap “Blow out candles” instead.', true);
-    micBusy = false; return;
+    mic.busy = false; return;
   }
-  // 2) Ask for permission. The AudioContext is created and resumed inside the click so it never stays suspended.
+  const ctx = Sound.context();                          // the shared context, already unlocked by the first tap
   $('micBanner').classList.remove('hidden'); micMsg('');
   console.info('[Birthday mic] Requesting microphone permission… please click Allow.');
-  micCtx = new (window.AudioContext || window.webkitAudioContext)(); micCtx.resume();
   try{
-    // Turn off noise suppression / auto gain, otherwise the browser filters out the sound of blowing.
-    micStream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false, noiseSuppression:false, autoGainControl:false}});
+    // Noise suppression / auto gain off, otherwise the browser filters out the sound of blowing.
+    mic.stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false, noiseSuppression:false, autoGainControl:false}});
   }catch(e){
-    try{ micCtx.close(); }catch(_){} micCtx = null; micBusy = false; $('micBanner').classList.add('hidden');
+    $('micBanner').classList.add('hidden'); mic.busy = false;
     const why = {NotAllowedError:'Microphone permission was denied. Allow it from the lock icon next to the address bar, then try again.',
       SecurityError:'The browser blocked the microphone on this page.',
       NotFoundError:'No microphone was found on this device.',
@@ -406,36 +505,37 @@ async function startMic(){
     micMsg(why + ' Tap “Blow out candles” instead.', true);
     return;
   }
-  await micCtx.resume(); micBusy = false; $('micBanner').classList.add('hidden');
-  const an = micCtx.createAnalyser(); an.fftSize = 1024; an.smoothingTimeConstant = .3;
-  micCtx.createMediaStreamSource(micStream).connect(an);
+  await ctx.resume();
+  $('micBanner').classList.add('hidden'); mic.busy = false;
+  const an = ctx.createAnalyser(); an.fftSize = 1024; an.smoothingTimeConstant = .3;
+  mic.source = ctx.createMediaStreamSource(mic.stream); mic.source.connect(an);
   const buf = new Uint8Array(an.fftSize); let loud = 0, frames = 0, floor = 0, thr = .08;
   $('micMeter').classList.remove('hidden'); $('micBtn').textContent = '🎤 Stop listening';
   micMsg('Listening… blow into the microphone 💨');
-  console.info('[Birthday mic] Microphone is on.');
   (function loop(){
     an.getByteTimeDomainData(buf);
     let sum = 0; for(const v of buf){ const d = (v-128)/128; sum += d*d; }
     const rms = Math.sqrt(sum/buf.length);
     $('micFill').style.width = Math.min(100, rms*400) + '%';
-    micRoot.style.setProperty('--blow', Math.min(1, rms*4).toFixed(2)); // flames lean with your breath
+    root.style.setProperty('--blow', Math.min(1, rms*4).toFixed(2));   // flames lean with your breath
     if(frames < 30){ floor += rms/30; if(++frames === 30) thr = Math.max(.07, floor*2.5 + .04); } // learn the room noise first
     else {
-      loud = rms > thr ? loud+1 : Math.max(0, loud-1); // sustained loud noise = a blow
+      loud = rms > thr ? loud+1 : Math.max(0, loud-1);                  // sustained loud noise = a blow
       if(loud > 6){ loud = 0; const lit = candles().filter(c => !c.classList.contains('out'));
-        if(lit.length){ blowSfx(); lit.slice(0,2).forEach(c => snuff(c,true)); } }
+        if(lit.length){ Sound.blow(); lit.slice(0,2).forEach(c => snuff(c,true)); } }
     }
-    micRaf = requestAnimationFrame(loop);
+    mic.raf = requestAnimationFrame(loop);
   })();
 }
 function stopMic(){
-  cancelAnimationFrame(micRaf); micRoot.style.setProperty('--blow', 0);
-  micStream && micStream.getTracks().forEach(t => t.stop());
-  if(micCtx){ try{ micCtx.close(); }catch(e){} }
-  micStream = micCtx = null; micBusy = false;
+  cancelAnimationFrame(mic.raf); root.style.setProperty('--blow', 0);
+  if(mic.source) mic.source.disconnect();
+  if(mic.stream) mic.stream.getTracks().forEach(t => t.stop());
+  mic.stream = mic.source = null; mic.busy = false;
   $('micMeter').classList.add('hidden'); $('micBtn').textContent = '🎤 Use microphone'; micMsg('');
 }
-$('micBtn').onclick = () => micStream ? stopMic() : (!micBusy && startMic());
+$('micBtn').onclick = () => mic.stream ? stopMic() : startMic();
+
 
 /* ---------- Flip cards ---------- */
 $('flipGrid').innerHTML = NOTES.map(n => `
@@ -449,60 +549,6 @@ document.querySelectorAll('.flip').forEach(c => {
   c.onclick = () => c.classList.toggle('on');
   c.onkeydown = e => (e.key==='Enter'||e.key===' ') && (e.preventDefault(), c.classList.toggle('on'));
 });
-
-/* ---------- Background music (file, with synth fallback) ---------- */
-const bgm = $('bgm'), mBtn = $('musicBtn'); let on = false, synth;   // on = "the person wants music"
-const bgmSources = bgm.querySelectorAll('source'), lastSource = bgmSources[bgmSources.length - 1];
-
-/* The bottom button always mirrors what is REALLY playing (the file or the fallback melody). */
-function syncMusicUI(){
-  const playing = (!!synth && !!sfxCtx && sfxCtx.state === 'running') || (!bgm.paused && !bgm.ended && !bgm.error);
-  mBtn.classList.toggle('playing', playing);
-  mBtn.setAttribute('aria-pressed', playing);
-  mBtn.setAttribute('aria-label', playing ? 'Pause music' : 'Play music');
-}
-bgm.onplay = bgm.onplaying = bgm.onpause = bgm.onended = syncMusicUI;
-bgm.onerror = () => { console.warn('[Birthday music] The audio element reported an error.'); syncMusicUI(); };
-
-function startSynth(){ // gentle fallback melody if the music file is missing
-  const ctx = getCtx(); ctx.resume();                                // shared audio context (unlocked by the tap)
-  ctx.onstatechange = syncMusicUI;
-  const g = ctx.createGain(); g.gain.value = .08; g.connect(ctx.destination);
-  const seq = [392,392,440,392,523,494, 392,392,440,392,587,523, 392,392,784,659,523,494,440, 698,698,659,523,587,523];
-  let i = 0, t = setInterval(() => {
-    const o = ctx.createOscillator(), e = ctx.createGain(); o.type='sine'; o.frequency.value = seq[i++ % seq.length];
-    e.gain.setValueAtTime(1, ctx.currentTime); e.gain.exponentialRampToValueAtTime(.001, ctx.currentTime+.5);
-    o.connect(e).connect(g); o.start(); o.stop(ctx.currentTime+.5);
-  }, 450);
-  return {stop(){ clearInterval(t); g.disconnect(); }};
-}
-
-/* Must be called from a tap/click: play() runs synchronously inside the gesture.
-   startMusic(true) restarts the song from the beginning. */
-function startMusic(fresh){
-  if(synth || (on && !bgm.paused)) return;                           // already playing
-  on = true;
-  if(fresh){ try{ bgm.currentTime = 0; }catch(e){} }
-  bgm.muted = false; bgm.volume = 1;                                 // never start muted or quiet
-  getCtx().resume().catch(() => {});                                 // unlock Web Audio too (used by the fallback melody)
-  const p = bgm.play();                                              // explicit audio.play() inside the gesture
-  syncMusicUI();
-  if(p) p.then(syncMusicUI).catch(playFailed);
-}
-function playFailed(e){                                              // never throws: always lands in a clean state
-  bgm.pause();
-  if(e && e.name === 'NotAllowedError'){                             // browser blocked playback: the button shows "paused" and the next tap retries
-    on = false; console.warn('[Birthday music] Playback was blocked by the browser. Tap the music button to start.');
-  }else{                                                             // file missing / unsupported: soft built-in melody
-    console.warn('[Birthday music] The music file could not play (' + (e && e.name) + '). Using the built-in melody.');
-    if(on && !synth) synth = startSynth();
-  }
-  syncMusicUI();
-}
-function stopMusic(){ bgm.pause(); synth && synth.stop(); synth = null; on = false; syncMusicUI(); }
-lastSource.addEventListener('error', () => { if(on && !synth){ bgm.pause(); synth = startSynth(); syncMusicUI(); } }); // every file missing -> fallback
-mBtn.onclick = () => (synth || !bgm.paused) ? stopMusic() : startMusic();
-syncMusicUI();
 
 /* ===== Flames lean when blown ===== */
 function lean(v,ms){ document.documentElement.style.setProperty('--blow',v); setTimeout(()=>document.documentElement.style.setProperty('--blow',0),ms); }
@@ -518,38 +564,24 @@ function lean(v,ms){ document.documentElement.style.setProperty('--blow',v); set
     `<span class="ch a-shimmer" style="color:${grad(i/(total-1))};animation-delay:${(i++*.07).toFixed(2)}s">${ch}</span>`).join('') + '</span>').join(' ');
 })();
 
-/* ===== Media fallbacks (soft placeholders if a file is missing) ===== */
-document.querySelectorAll('.vframe video').forEach(v => {
-  const fail = () => { v.closest('.vframe').classList.add('missing'); console.warn('[Birthday] Could not load ' + v.getAttribute('src') + ' (check the videos/ folder).'); };
-  v.addEventListener('error', fail); if(v.error) fail();
-});
-document.querySelectorAll('.pframe img').forEach(img => {
-  const fail = () => {
-    if(img.dataset.alt){ img.src = img.dataset.alt; delete img.dataset.alt; return; } // try photo next to index.html
-    img.closest('.pframe').classList.add('missing'); console.warn('[Birthday] Could not load ' + img.getAttribute('src') + ' (check the images/ folder).');
-  };
-  img.addEventListener('error', fail); if(img.complete && img.naturalWidth === 0 && img.currentSrc) fail();
-});
-
-/* ===== Videos stay silent so they never interrupt the background music ===== */
-document.querySelectorAll('.vframe video').forEach(v => {
-  v.muted = true;
-  v.addEventListener('volumechange', () => { if(!v.muted) v.muted = true; });
-});
-/* ===== Keep the background music going (e.g. after a phone call or switching tabs) ===== */
-document.addEventListener('visibilitychange', () => {
-  if(document.visibilityState === 'visible' && on && !synth && bgm.paused) bgm.play().catch(() => {});
-});
-
-/* ===== Videos play when visible and pause when scrolled away ===== */
+/* ===== Media: videos play (muted) while visible; photos and videos show a soft placeholder if a file is missing ===== */
 (function(){
-  const vids = document.querySelectorAll('.vframe video');
-  const io2 = new IntersectionObserver(entries => entries.forEach(e => {
-    const v = e.target;
-    if(e.isIntersecting) v.play().catch(() => {});   // muted, so browsers allow it
-    else v.pause();
+  const watcher = new IntersectionObserver(entries => entries.forEach(e => {
+    if(e.isIntersecting) e.target.play().catch(() => {}); else e.target.pause();
   }), {threshold: .35});
-  vids.forEach(v => { v.pause(); io2.observe(v); });   // wait for the section to be seen before playing
+  document.querySelectorAll('.vframe video').forEach(v => {
+    v.muted = true;                                     // muted from the start: required for autoplay on phones
+    const fail = () => { v.closest('.vframe').classList.add('missing'); console.warn('[Birthday] Could not load ' + v.getAttribute('src') + ' (check the videos/ folder).'); };
+    v.addEventListener('error', fail); if(v.error) fail();
+    v.pause(); watcher.observe(v);                      // wait until the video is on screen
+  });
+  document.querySelectorAll('.pframe img').forEach(img => {
+    const fail = () => {
+      if(img.dataset.alt){ img.src = img.dataset.alt; delete img.dataset.alt; return; }   // try the photo next to index.html
+      img.closest('.pframe').classList.add('missing'); console.warn('[Birthday] Could not load ' + img.getAttribute('src') + ' (check the images/ folder).');
+    };
+    img.addEventListener('error', fail); if(img.complete && img.naturalWidth === 0 && img.currentSrc) fail();
+  });
 })();
 
 /* ===== Local preview / non-HTTPS: the mic is likely blocked, so point to the Blow button ===== */
@@ -625,20 +657,19 @@ if(!window.isSecureContext || location.protocol === 'file:'){
   });
 })();
 
-/* ===== Tap-to-open overlay: fade out, then start the music inside the same tap ===== */
+/* ===== Boot: tap-to-open overlay (the tap is the gesture that unlocks audio on phones) ===== */
 (function(){
   const ov = $('openOverlay'); let opened = false;
-  /* Every load/reload starts clean: scrolled to the top with the overlay shown, so a fresh tap starts the audio. */
+  /* Every load or reload starts clean: top of the page, overlay shown, a fresh tap needed. */
   if('scrollRestoration' in history) history.scrollRestoration = 'manual';
   window.scrollTo(0,0);
-  window.addEventListener('pageshow', e => { if(e.persisted) location.reload(); }); // page restored from the back/forward cache -> start over
-  document.body.style.overflow = 'hidden';                 // no scrolling behind the overlay
+  window.addEventListener('pageshow', e => { if(e.persisted) location.reload(); });   // restored from the back/forward cache -> start over
+  document.body.style.overflow = 'hidden';                                            // no scrolling behind the overlay
+  Sound.preload();                                                                    // silent pre-load of the song
+
   function openSurprise(){
     if(opened) return; opened = true;
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();   // created inside the tap
-    if (audioCtx.state === 'suspended') { audioCtx.resume(); }
-    sfxCtx = audioCtx;                                     // the page's sound effects reuse this unlocked context
-    startMusic(true);                                      // currentTime = 0, unmuted, volume 1, play() inside the tap
+    Sound.unlock();                                       // AudioContext + unmute + play(), all inside this tap
     ov.classList.add('hide');
     document.body.style.overflow = '';
     setTimeout(() => ov.remove(), 1000);
