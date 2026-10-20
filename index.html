@@ -115,22 +115,13 @@
   .open-title{font-family:'Playfair Display',serif;font-weight:800;font-size:clamp(1.8rem,7vw,3rem);line-height:1.25;max-width:20ch;color:#fbcfe8;text-shadow:0 0 28px rgba(249,168,212,.5);animation:pulse 2.4s ease-in-out infinite}
   @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
   .open-sub{font-family:'Dancing Script',cursive;font-size:clamp(1.3rem,5vw,1.9rem);color:#f5d0fe;max-width:26ch}
-  /* "Scroll down" hint under the cake: hidden until the candles are out, then fades in */
-  .scroll-hint{position:absolute;left:0;right:0;top:100%;margin-top:1.1rem;display:flex;justify-content:center;pointer-events:none;opacity:0;visibility:hidden;transition:opacity 1.2s ease,visibility 1.2s}
-  .scroll-hint.show{opacity:1;visibility:visible}
-  .scroll-hint-text{display:inline-block;max-width:min(100%,14.5rem);padding:.7rem 1.3rem;border-radius:9999px;text-align:center;font-weight:700;font-size:clamp(1rem,4.2vw,1.3rem);line-height:1.3;color:#fff;
-    background:linear-gradient(135deg,rgba(139,124,246,.6),rgba(244,114,182,.6));border:1px solid rgba(255,255,255,.4);box-shadow:0 0 30px rgba(244,114,182,.5);text-shadow:0 2px 10px rgba(10,5,30,.6);animation:hintBob 1.6s ease-in-out infinite}
-  .hint-arrow{display:inline-block;animation:hintArrow 1.1s ease-in-out infinite}
-  @media(min-width:640px){.scroll-hint-text{max-width:100%}}   /* narrow on phones so the floating music button never covers it */
-  @keyframes hintBob{0%,100%{transform:translateY(0)}50%{transform:translateY(7px)}}
-  @keyframes hintArrow{0%,100%{transform:translateY(0)}50%{transform:translateY(6px)}}
   @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
 <!-- Tap-to-open overlay: the tap is the user gesture that lets the music start on phones -->
 <div id="openOverlay" role="button" tabindex="0" aria-label="Tap anywhere to open your surprise">
-  <div class="open-title">Tap anywhere to open your surprise 🎁</div>
+  <h1 class="open-title">Tap anywhere to open your surprise 🎁</h1>
   <p class="open-sub">I don't rate you 10/10... I rate you 21/10 ❤️ 😝</p>
 </div>
 <div class="aurora"></div>
@@ -149,7 +140,7 @@
 
 <!-- ============ 2. CAKE ============ -->
 <section id="cake" class="min-h-screen flex items-center justify-center px-5 py-16">
-  <div class="reveal glass relative rounded-[2rem] max-w-xl w-full p-8 text-center">
+  <div class="reveal glass rounded-[2rem] max-w-xl w-full p-8 text-center">
     <h2 class="font-display text-3xl sm:text-4xl font-semibold grad-text">Make a wish</h2>
     <p id="cakeMsg" class="text-violet-100/75 mt-2 mb-4 text-sm">Tap each candle, press the button, or blow into your microphone.</p>
 
@@ -179,11 +170,6 @@
     <!-- Microphone prompts / errors appear here -->
     <div id="micBanner" role="alert" class="hidden mt-4 mx-auto max-w-xs rounded-2xl px-4 py-3 text-sm text-white bg-gradient-to-r from-violet-500/50 to-pink-500/50 border border-white/30 shadow-[0_0_30px_rgba(244,114,182,.4)] animate-pulse">🎤 Click 'Allow' when your browser requests microphone access.</div>
     <p id="micStatus" role="status" class="mt-3 text-xs text-pink-200/90 min-h-[1rem]"></p>
-
-    <!-- Appears below the cake once every candle is out -->
-    <div id="scrollHint" class="scroll-hint" role="status" aria-hidden="true">
-      <p class="scroll-hint-text"><span>Scroll down for more surprises...</span> <span class="hint-arrow">👇</span><span>✨</span></p>
-    </div>
   </div>
 </section>
 
@@ -287,10 +273,13 @@
 <footer class="text-center text-violet-200/60 text-sm py-14">Made with love 💜 Happy Birthday!</footer>
 
 <!-- ============ 5. MUSIC ============ -->
-<!-- ✏️ Your song goes in a folder called "music" next to index.html. The file names are listed in MUSIC_FILES (top of the script).
-     The script downloads the song while the overlay is showing, so it starts instantly on the first tap. -->
-<audio id="bgm" loop preload="auto"></audio>
-<button id="musicBtn" aria-label="Background music" aria-pressed="false" class="fixed bottom-5 right-5 z-50 btn rounded-full h-14 w-14 flex items-center justify-center">
+<!-- ✏️ Put your song in a folder called "music" next to index.html (song.mp3, or birthday.mp3 as a second name).
+     If neither file can be loaded, a soft built-in melody plays instead. -->
+<audio id="bgm" loop preload="auto">
+  <source src="music/song.mp3" type="audio/mpeg">
+  <source src="music/birthday.mp3" type="audio/mpeg">
+</audio>
+<button id="musicBtn" aria-label="Play music" aria-pressed="false" class="fixed bottom-5 right-5 z-50 btn rounded-full h-14 w-14 flex items-center justify-center">
   <span class="bars flex items-end gap-[3px] h-6"><span></span><span></span><span></span><span></span><span></span></span>
 </button>
 
@@ -304,22 +293,13 @@ const NOTES = [
 ];
 const $ = id => document.getElementById(id);
 
-/* ✏️ Music files: the first name that exists is used. If none exists, a soft built-in melody plays instead. */
-const MUSIC_FILES = ['music/song.mp3', 'music/birthday.mp3'];
-
-/* confetti() is loaded from a CDN: if it is blocked or offline, the page keeps working without it. */
-const burst = opts => { try{ if(typeof confetti === 'function') confetti(opts); }catch(e){} };
-
 /* ===== Sound engine: one <audio> element + one shared Web Audio context ===== */
 const Sound = (() => {
   const audio = $('bgm'), btn = $('musicBtn');
-  let ctx = null;          // shared Web Audio context, created inside the first tap
-  let fallback = null;     // built-in melody, used only when no music file can be loaded
-  let noise = null;        // cached noise buffer for the blow sound
-  let wanted = false;      // the visitor asked for music (so we can resume after an interruption)
-  let noFile = false;      // true once no music file could be loaded
-  let source = 'pending';  // 'pending' | 'blob' (fully downloaded) | 'streaming' | 'missing'
-  let fileIdx = 0, lastFailed = -1;
+  let ctx = null;         // shared Web Audio context, created inside the first tap
+  let fallback = null;    // built-in melody, used only when no music file can be loaded
+  let wanted = false;     // the visitor asked for music (so we can resume after an interruption)
+  let noFile = false;     // true once every file in <audio> has failed to load
 
   /* The button always answers one question: is sound really coming out of the speakers? */
   function sync(){
@@ -327,45 +307,28 @@ const Sound = (() => {
                               : !noFile && !audio.paused && !audio.muted && !audio.ended && !audio.error && audio.readyState >= 2;
     btn.classList.toggle('playing', sounding);
     btn.setAttribute('aria-pressed', sounding);
+    btn.setAttribute('aria-label', sounding ? 'Pause music' : 'Play music');
     return sounding;
   }
   audio.onplay = audio.onplaying = audio.onwaiting = audio.onpause = audio.onended = audio.onvolumechange = sync;
-  audio.onerror = () => fileFailed();
+  audio.onerror = () => { console.warn('[Birthday music] The audio element reported an error.'); sync(); };
 
   function context(){
     if(!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
-    if(ctx.state === 'suspended') ctx.resume().catch(() => {});
+    if(ctx.state === 'suspended') ctx.resume();
     return ctx;
   }
 
-  /* Download the whole song while the overlay is showing. Phones ignore preload="auto", so without this the file
-     only starts downloading after the tap, which is the delay you hear. Once it is in memory, play() starts at once. */
+  /* Silent pre-load on page open, so the track is buffered and ready for the first tap. */
   function preload(){
-    audio.preload = 'auto'; audio.muted = true;
-    prefetch();
+    audio.muted = true;
+    audio.play().catch(() => {});
   }
-  async function prefetch(){
-    if(location.protocol === 'file:') return;                          // a file:// preview can't fetch: the first tap streams the file instead
-    try{
-      for(const url of MUSIC_FILES){
-        const r = await fetch(url);
-        if(!r.ok) continue;                                            // not there: try the next name
-        const blob = new Blob([await r.arrayBuffer()], {type:'audio/mpeg'});
-        if(!blob.size) continue;
-        if(wanted || source !== 'pending') return;                     // the visitor already started: keep streaming
-        audio.src = URL.createObjectURL(blob); source = 'blob';
-        audio.play().catch(() => {});                                  // silent warm-up (muted); allowed by most browsers
-        return;
-      }
-      if(source === 'pending'){ source = 'missing'; noFile = true; sync(); }   // every name returned "not found"
-    }catch(e){ /* offline or blocked: the first tap streams the file instead */ }
-  }
-  function streamFrom(i){ fileIdx = i; source = 'streaming'; audio.src = MUSIC_FILES[i]; }
 
   /* First-tap unlock. Everything here runs synchronously inside the user gesture. */
   function unlock(){
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === 'suspended') { audioCtx.resume().catch(() => {}); }
+    if (audioCtx.state === 'suspended') { audioCtx.resume(); }
     ctx = audioCtx;
     start(true);
   }
@@ -375,7 +338,6 @@ const Sound = (() => {
     if(sync()) return;                                  // already sounding
     wanted = true; stopFallback();
     if(noFile){ startFallback(); return; }
-    if(source === 'pending') streamFrom(0);             // the download isn't finished: stream right away instead of waiting
     if(restart){ try{ audio.currentTime = 0; }catch(e){} }
     audio.muted = false; audio.volume = 1.0;
     context();
@@ -384,32 +346,21 @@ const Sound = (() => {
     if(p) p.then(sync).catch(onPlayError);
   }
   function onPlayError(e){
-    if(e && e.name === 'AbortError') return sync();     // play() was interrupted by a pause or a new source: not a real failure
-    if(e && e.name === 'NotAllowedError'){              // browser blocked it: the button shows "paused", the next tap retries
-      audio.pause(); wanted = false;
+    if(e && e.name === 'AbortError') return sync();     // play() was interrupted by a pause: not a real failure
+    audio.pause();
+    if(e && e.name === 'NotAllowedError'){              // browser blocked it: button shows "paused", the next tap retries
+      wanted = false;
       console.warn('[Birthday music] Playback was blocked by the browser. Tap the music button to start.');
-      return sync();
+    }else{                                              // file missing or unsupported: soft built-in melody
+      console.warn('[Birthday music] The music file could not play (' + (e && e.name) + '). Using the built-in melody.');
+      startFallback();
     }
-    fileFailed();                                       // unsupported or unreadable file
-  }
-  /* A file could not be loaded or decoded: try the next name, then fall back to the built-in melody. */
-  function fileFailed(){
-    if(source === 'streaming'){
-      if(fileIdx === lastFailed) return;                // the play() promise and the error event both report it: handle once
-      lastFailed = fileIdx;
-      if(fileIdx + 1 < MUSIC_FILES.length){
-        streamFrom(fileIdx + 1);
-        if(wanted) audio.play().catch(() => {});
-        return;
-      }
-    }
-    console.warn('[Birthday music] No music file could be played (' + MUSIC_FILES.join(', ') + '). Using the built-in melody.');
-    noFile = true; startFallback(); sync();
+    sync();
   }
   function pause(){ wanted = false; audio.pause(); stopFallback(); sync(); }
   function toggle(){ sync() ? pause() : start(); }
 
-  /* Built-in melody (only when no music file can be loaded) */
+  /* Built-in melody (only when the music file can't be loaded) */
   function startFallback(){
     if(!wanted || fallback) return;
     const c = context(), out = c.createGain();
@@ -427,19 +378,23 @@ const Sound = (() => {
   }
   function stopFallback(){ if(fallback){ fallback.stop(); fallback = null; } }
 
-  /* Soft "whoosh" when a candle is blown out (the noise buffer is built once and reused) */
+  /* Soft "whoosh" when a candle is blown out */
   function blow(){
-    const c = context(), t = c.currentTime;
-    if(!noise){
-      noise = c.createBuffer(1, Math.floor(c.sampleRate * .9), c.sampleRate);
-      const d = noise.getChannelData(0);
-      for(let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-    }
+    const c = context(), len = Math.floor(c.sampleRate * .9), t = c.currentTime;
+    const buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+    for(let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
     const src = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
-    src.buffer = noise; f.type = 'bandpass'; f.frequency.value = 900; f.Q.value = .6;
+    src.buffer = buf; f.type = 'bandpass'; f.frequency.value = 900; f.Q.value = .6;
     g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.7, t + .12); g.gain.exponentialRampToValueAtTime(.001, t + .85);
     src.connect(f).connect(g).connect(c.destination); src.start(t);
   }
+
+  /* If every source fails to load, switch to the built-in melody (once the visitor has asked for music). */
+  const sources = audio.querySelectorAll('source');
+  sources[sources.length - 1].addEventListener('error', () => {
+    console.warn('[Birthday music] No music file could be loaded from the music/ folder.');
+    noFile = true; audio.pause(); startFallback(); sync();
+  });
 
   /* Come back from a phone call or another tab: pick the music up again. */
   document.addEventListener('visibilitychange', () => {
@@ -461,13 +416,13 @@ document.querySelectorAll('.reveal').forEach(el => io.observe(el));
 /* ---------- Start button: sparkle burst + scroll ---------- */
 $('startBtn').addEventListener('click', e => {
   const r = e.target.getBoundingClientRect();
-  burst({particleCount:70, spread:80, startVelocity:25, origin:{x:(r.left+r.width/2)/innerWidth, y:(r.top+r.height/2)/innerHeight}, colors:['#c4b5fd','#f9a8d4','#fff','#a78bfa'], scalar:.9});
+  confetti({particleCount:70, spread:80, startVelocity:25, origin:{x:(r.left+r.width/2)/innerWidth, y:(r.top+r.height/2)/innerHeight}, colors:['#c4b5fd','#f9a8d4','#fff','#a78bfa'], scalar:.9});
   setTimeout(() => $('cake').scrollIntoView({behavior:'smooth'}), 450);
   Sound.start();   // retry here if the first tap was ever blocked (does nothing while music is playing)
 });
 $('startBtn').addEventListener('mouseenter', e => { // small hover sparkle
   const r = e.target.getBoundingClientRect();
-  burst({particleCount:10, spread:50, startVelocity:12, ticks:60, origin:{x:(r.left+r.width/2)/innerWidth, y:r.top/innerHeight}, colors:['#f9a8d4','#fff']});
+  confetti({particleCount:10, spread:50, startVelocity:12, ticks:60, origin:{x:(r.left+r.width/2)/innerWidth, y:r.top/innerHeight}, colors:['#f9a8d4','#fff']});
 });
 
 /* ---------- Candles ---------- */
@@ -493,14 +448,12 @@ xs.forEach((x,i) => {
 });
 const candles = () => [...document.querySelectorAll('.candle')];
 let done = false;
-function showHint(on){ const h = $('scrollHint'); h.classList.toggle('show', on); h.setAttribute('aria-hidden', !on); }
 function checkDone(){
   if(done || candles().some(c => !c.classList.contains('out'))) return;
   done = true; stopMic();
   $('cakeMsg').textContent = '🎉 Wish made! May it come true.';
   $('blowBtn').classList.add('hidden'); $('relightBtn').classList.remove('hidden');
   fireworks();
-  setTimeout(() => { if(done) showHint(true); }, 900);   // let the fireworks start, then fade the hint in
 }
 /* Extinguish one candle (silent=true skips the blow sound) */
 function snuff(c, silent){
@@ -511,23 +464,23 @@ function blowAll(){ Sound.blow(); lean(.9,450); candles().forEach((c,i) => setTi
 
 $('blowBtn').onclick = blowAll;
 $('relightBtn').onclick = () => {
-  done = false; showHint(false); candles().forEach(c => c.classList.remove('out'));
+  done = false; candles().forEach(c => c.classList.remove('out'));
   $('cakeMsg').textContent = 'Tap each candle, press the button, or blow into your microphone.';
   $('blowBtn').classList.remove('hidden'); $('relightBtn').classList.add('hidden');
 };
 function fireworks(){
   const end = Date.now() + 3500, colors = ['#c4b5fd','#f9a8d4','#fde68a','#fff','#a78bfa'];
   (function frame(){
-    burst({particleCount:6, angle:60, spread:70, origin:{x:0,y:.7}, colors});
-    burst({particleCount:6, angle:120, spread:70, origin:{x:1,y:.7}, colors});
+    confetti({particleCount:6, angle:60, spread:70, origin:{x:0,y:.7}, colors});
+    confetti({particleCount:6, angle:120, spread:70, origin:{x:1,y:.7}, colors});
     if(Date.now() < end) requestAnimationFrame(frame);
   })();
-  for(let i=0;i<5;i++) setTimeout(() => burst({particleCount:80, spread:360, startVelocity:30, origin:{x:Math.random(), y:Math.random()*.5}, colors}), i*500);
+  for(let i=0;i<5;i++) setTimeout(() => confetti({particleCount:80, spread:360, startVelocity:30, origin:{x:Math.random(), y:Math.random()*.5}, colors}), i*500);
 }
 
 /* ---------- Microphone blow detection ---------- */
 const root = document.documentElement;
-const mic = {stream:null, source:null, analyser:null, raf:0, pending:0, token:0};
+const mic = {stream:null, source:null, raf:0, busy:false};
 /* Blow sensitivity (lower numbers = more sensitive). Was: minLevel .07, noiseMult 2.5, noiseAdd .04, frames 6. */
 const BLOW = {
   minLevel: .03,    // the trigger level never goes below this volume (0 to 1)
@@ -536,83 +489,59 @@ const BLOW = {
   frames: 4         // the breath must stay above that level for more than this many frames (~1/60 s each, so about 0.08 s)
 };
 function micMsg(msg, warn){ $('micStatus').textContent = msg; if(warn) console.warn('[Birthday mic] ' + msg); }
-const stopTracks = stream => stream.getTracks().forEach(t => t.stop());
 
 async function startMic(){
-  if(mic.stream || mic.pending) return;
-  const token = ++mic.token; mic.pending = token;
-  try{
-    // Browsers only expose the microphone on HTTPS or localhost.
-    if(!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)){
-      micMsg('The microphone is not available here (it needs HTTPS or localhost). Tap “Blow out candles” instead.', true);
-      return;
-    }
-    const ctx = Sound.context();                        // the shared context, already unlocked by the first tap
-    $('micBanner').classList.remove('hidden'); micMsg('');
-    console.info('[Birthday mic] Requesting microphone permission… please click Allow.');
-    let stream;
-    try{
-      // Noise suppression / auto gain off, otherwise the browser filters out the sound of blowing.
-      stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false, noiseSuppression:false, autoGainControl:false}});
-    }catch(e){
-      $('micBanner').classList.add('hidden');
-      const why = {NotAllowedError:'Microphone permission was denied. Allow it from the lock icon next to the address bar, then try again.',
-        SecurityError:'The browser blocked the microphone on this page.',
-        NotFoundError:'No microphone was found on this device.',
-        NotReadableError:'The microphone is being used by another app.'}[e.name] || ('Could not start the microphone (' + e.name + ').');
-      micMsg(why + ' Tap “Blow out candles” instead.', true);
-      return;
-    }
-    // The wish was made (or the visitor stopped) while the permission prompt was open: release the microphone right away.
-    if(token !== mic.token){ stopTracks(stream); return; }
-    await ctx.resume().catch(() => {});
-    if(token !== mic.token){ stopTracks(stream); return; }
-
-    $('micBanner').classList.add('hidden');
-    mic.stream = stream;
-    stream.getAudioTracks().forEach(t => t.addEventListener('ended', () => { if(mic.stream === stream) stopMic(); }));  // device unplugged or taken by another app
-    const an = mic.analyser = ctx.createAnalyser(); an.fftSize = 1024; an.smoothingTimeConstant = .3;
-    mic.source = ctx.createMediaStreamSource(stream); mic.source.connect(an);   // analysis only: never connected to the speakers
-    const buf = new Uint8Array(an.fftSize); let loud = 0, frames = 0, floor = 0, thr = BLOW.minLevel;
-    $('micMeter').classList.remove('hidden'); $('micBtn').textContent = '🎤 Stop listening';
-    micMsg('Listening… blow into the microphone 💨');
-    (function loop(){
-      an.getByteTimeDomainData(buf);
-      let sum = 0; for(const v of buf){ const d = (v-128)/128; sum += d*d; }
-      const rms = Math.sqrt(sum/buf.length);
-      $('micFill').style.width = Math.min(100, rms*400) + '%';
-      root.style.setProperty('--blow', Math.min(1, rms*4).toFixed(2));   // flames lean with your breath
-      if(frames < 30){ floor += rms/30; if(++frames === 30) thr = Math.max(BLOW.minLevel, floor*BLOW.noiseMult + BLOW.noiseAdd); } // learn the room noise first
-      else {
-        loud = rms > thr ? loud+1 : Math.max(0, loud-1);                  // sustained loud noise = a blow
-        if(loud > BLOW.frames){ loud = 0; const lit = candles().filter(c => !c.classList.contains('out'));
-          if(lit.length){ Sound.blow(); lit.slice(0,2).forEach(c => snuff(c,true)); } }
-      }
-      mic.raf = requestAnimationFrame(loop);
-    })();
-  }finally{
-    if(mic.pending === token) mic.pending = 0;
+  if(mic.busy) return; mic.busy = true;
+  // Browsers only expose the microphone on HTTPS or localhost.
+  if(!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)){
+    micMsg('The microphone is not available here (it needs HTTPS or localhost). Tap “Blow out candles” instead.', true);
+    mic.busy = false; return;
   }
+  const ctx = Sound.context();                          // the shared context, already unlocked by the first tap
+  $('micBanner').classList.remove('hidden'); micMsg('');
+  console.info('[Birthday mic] Requesting microphone permission… please click Allow.');
+  try{
+    // Noise suppression / auto gain off, otherwise the browser filters out the sound of blowing.
+    mic.stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false, noiseSuppression:false, autoGainControl:false}});
+  }catch(e){
+    $('micBanner').classList.add('hidden'); mic.busy = false;
+    const why = {NotAllowedError:'Microphone permission was denied. Allow it from the lock icon next to the address bar, then try again.',
+      SecurityError:'The browser blocked the microphone on this page.',
+      NotFoundError:'No microphone was found on this device.',
+      NotReadableError:'The microphone is being used by another app.'}[e.name] || ('Could not start the microphone (' + e.name + ').');
+    micMsg(why + ' Tap “Blow out candles” instead.', true);
+    return;
+  }
+  await ctx.resume();
+  $('micBanner').classList.add('hidden'); mic.busy = false;
+  const an = ctx.createAnalyser(); an.fftSize = 1024; an.smoothingTimeConstant = .3;
+  mic.source = ctx.createMediaStreamSource(mic.stream); mic.source.connect(an);
+  const buf = new Uint8Array(an.fftSize); let loud = 0, frames = 0, floor = 0, thr = BLOW.minLevel;
+  $('micMeter').classList.remove('hidden'); $('micBtn').textContent = '🎤 Stop listening';
+  micMsg('Listening… blow into the microphone 💨');
+  (function loop(){
+    an.getByteTimeDomainData(buf);
+    let sum = 0; for(const v of buf){ const d = (v-128)/128; sum += d*d; }
+    const rms = Math.sqrt(sum/buf.length);
+    $('micFill').style.width = Math.min(100, rms*400) + '%';
+    root.style.setProperty('--blow', Math.min(1, rms*4).toFixed(2));   // flames lean with your breath
+    if(frames < 30){ floor += rms/30; if(++frames === 30) thr = Math.max(BLOW.minLevel, floor*BLOW.noiseMult + BLOW.noiseAdd); } // learn the room noise first
+    else {
+      loud = rms > thr ? loud+1 : Math.max(0, loud-1);                  // sustained loud noise = a blow
+      if(loud > BLOW.frames){ loud = 0; const lit = candles().filter(c => !c.classList.contains('out'));
+        if(lit.length){ Sound.blow(); lit.slice(0,2).forEach(c => snuff(c,true)); } }
+    }
+    mic.raf = requestAnimationFrame(loop);
+  })();
 }
-/* Releases everything: the stream's tracks (the browser's recording indicator turns off), the analysis nodes and the animation loop.
-   The shared audio context is kept, because the music and sound effects use it. */
 function stopMic(){
-  mic.token++; mic.pending = 0;
   cancelAnimationFrame(mic.raf); root.style.setProperty('--blow', 0);
   if(mic.source) mic.source.disconnect();
-  if(mic.analyser) mic.analyser.disconnect();
-  if(mic.stream) stopTracks(mic.stream);
-  mic.stream = mic.source = mic.analyser = null;
-  $('micBanner').classList.add('hidden'); $('micMeter').classList.add('hidden');
-  $('micBtn').textContent = '🎤 Use microphone'; micMsg('');
+  if(mic.stream) mic.stream.getTracks().forEach(t => t.stop());
+  mic.stream = mic.source = null; mic.busy = false;
+  $('micMeter').classList.add('hidden'); $('micBtn').textContent = '🎤 Use microphone'; micMsg('');
 }
-$('micBtn').onclick = () => {
-  if(mic.stream || mic.pending) return stopMic();
-  startMic().catch(err => { console.warn('[Birthday mic]', err); stopMic(); micMsg('Could not start the microphone. Tap “Blow out candles” instead.'); });
-};
-/* Never leave the microphone running in the background */
-document.addEventListener('visibilitychange', () => { if(document.hidden && (mic.stream || mic.pending)) stopMic(); });
-window.addEventListener('pagehide', () => { if(mic.stream || mic.pending) stopMic(); });
+$('micBtn').onclick = () => mic.stream ? stopMic() : startMic();
 
 
 /* ---------- Flip cards ---------- */
@@ -722,7 +651,7 @@ if(!window.isSecureContext || location.protocol === 'file:'){
   const modal = $('letterModal'), openBtn = $('envBtn'), closeBtn = $('letterClose');
   function openLetter(){
     modal.classList.add('open'); document.body.style.overflow = 'hidden'; closeBtn.focus();
-    burst({particleCount:40, spread:70, origin:{y:.6}, colors:['#f9a8d4','#c4b5fd','#fff'], scalar:.9});
+    confetti({particleCount:40, spread:70, origin:{y:.6}, colors:['#f9a8d4','#c4b5fd','#fff'], scalar:.9});
   }
   function closeLetter(){ modal.classList.remove('open'); document.body.style.overflow = ''; openBtn.focus(); }
   openBtn.addEventListener('click', openLetter);
